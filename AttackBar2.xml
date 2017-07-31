@@ -1,0 +1,91 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/">
+  <Script file="AttackBar2.lua"/>
+  <!-- Addon -->
+  <Frame name="AttackBarCore">
+    <Scripts>
+      <OnLoad>
+        AttackBarCore_OnLoad()
+      </OnLoad>
+      <OnEvent>
+        AttackBarCore_OnEvent()
+      </OnEvent>
+    </Scripts>
+  </Frame>
+  <!-- Attack bar template -->
+  <StatusBar name="AttackBarTemplate" drawLayer="BORDER" movable="true" hidden="true" virtual="true">
+    <Scripts>
+      <OnMouseDown>
+        AttackBar_OnMouseDown()
+      </OnMouseDown>
+      <OnMouseUp>
+        AttackBar_OnMouseUp()
+      </OnMouseUp>
+      <OnUpdate>
+        AttackBar_OnUpdate()
+      </OnUpdate>
+    </Scripts>
+    <Size>
+      <AbsDimension x="195" y="13"/>
+    </Size>
+    <Layers>
+      <Layer level="BACKGROUND">
+        <Texture name="$parentBackground" setAllPoints="true">
+          <Color r="0" g="0" b="0" a="0.5"/>
+        </Texture>
+      </Layer>
+      <Layer level="ARTWORK">
+        <Texture name="$parentBorder" file="Interface\CastingBar\UI-CastingBar-Border">
+          <Size>
+            <AbsDimension x="256" y="64"/>
+          </Size>
+          <Anchors>
+            <Anchor point="TOP">
+              <Offset>
+                <AbsDimension x="0" y="28"/>
+              </Offset>
+            </Anchor>
+          </Anchors>
+        </Texture>
+        <FontString name="$parentText" hidden="true" inherits="GameFontHighlight">
+          <Size>
+            <AbsDimension x="185" y="16"/>
+          </Size>
+          <Anchors>
+            <Anchor point="TOP">
+              <Offset>
+                <AbsDimension x="0" y="5"/>
+              </Offset>
+            </Anchor>
+          </Anchors>
+        </FontString>
+      </Layer>
+      <Layer level="OVERLAY">
+        <Texture name="$parentSpark" hidden="true" file="Interface\CastingBar\UI-CastingBar-Spark" alphaMode="ADD">
+          <Size>
+            <AbsDimension x="32" y="32"/>
+          </Size>
+          <Anchors>
+            <Anchor point="CENTER"/>
+          </Anchors>
+        </Texture>
+        <Texture name="$parentFlash" hidden="true" file="Interface\CastingBar\UI-CastingBar-Flash" alphaMode="ADD">
+          <Size>
+            <AbsDimension x="256" y="64"/>
+          </Size>
+          <Anchors>
+            <Anchor point="TOP">
+              <Offset>
+                <AbsDimension x="0" y="28"/>
+              </Offset>
+            </Anchor>
+          </Anchors>
+        </Texture>
+      </Layer> -->
+    </Layers>
+  </StatusBar>
+  <!-- Attack bars -->
+  <StatusBar name="AttackBar_PlayerMH" toplevel="true" parent="UIParent" inherits="AttackBarTemplate"/>
+  <StatusBar name="AttackBar_PlayerOH" toplevel="true" parent="UIParent" inherits="AttackBarTemplate"/>
+  <StatusBar name="AttackBar_EnemyMH" toplevel="true" parent="UIParent" inherits="AttackBarTemplate"/>
+  <StatusBar name="AttackBar_EnemyOH" toplevel="true" parent="UIParent" inherits="AttackBarTemplate"/>
+</Ui>
