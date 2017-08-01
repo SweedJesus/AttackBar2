@@ -14,6 +14,34 @@ SlashCmdList["CLEAR"] = function()
     end
 end
 
+-- https://en.wikipedia.org/wiki/HSL_and_HSL
+-- @param h Hue (0-360)
+-- @param s Saturation (0-1)
+-- @param l Lightness (0-1)
+function HSL(h, s, l)
+    h, s, l = mod(abs(h), 360) / 60, abs(s), abs(l)
+    if s > 1 then s = mod(s, 1) end
+    if l > 1 then l = mod(l, 1) end
+    local c = (1 - abs(2 * l - 1)) * s
+    local x = c * (1 - abs(mod(h, 2) - 1))
+    local r, g, b
+    if h < 1 then
+        r, g, b = c, x, 0
+    elseif h < 2 then
+        r, g, b = x, c, 0
+    elseif h < 3 then
+        r, g, b = 0, c, x
+    elseif h < 4 then
+        r, g, b = 0, x, c
+    elseif h < 5 then
+        r, g, b = x, 0, c
+    else
+        r, g, b = c, 0, x
+    end
+    local m = l - c / 2
+    return r + m, g + m, b + m
+end
+
 -- -----------------------------------------------------------------------------
 -- Attack Bar (v.2)
 
@@ -43,24 +71,72 @@ function AttackBarCore_OnLoad()
   --this:RegisterEvent("UNIT_SPELLCAST_SENT")
 end
 
+local function AttackBar_Activate(this)
+  this.active = true
+  this:Show()
+end
+
+local function AttackBar_Deactivate(this)
+  this.active = false
+  this:Hide()
+end
+
+local function AttackBar_Init(this, y, onUpdate)
+  this:SetPoint("CENTER", 0, y)
+  this.text = _G[this:GetName().."Text"]
+  this.spark = _G[this:GetName().."Spark"]
+  this.Activate = AttackBar_Activate
+  this.Deactivate = AttackBar_Deactivate
+  this.SetText = AttackBar_SetText
+  if onUpdate then
+    this:SetScript("OnUpdate", onUpdate)
+  end
+end
+
+local function AttackBarOnUpdate(
+
+local hue = 0
+local function GamerPowerOnUpdate()
+  local now = GetTime()
+  this:SetValue(GetTime())
+  hue = math.mod(hue + arg1*10, 360)
+  this:SetStatusBarColor(HSL(hue, 1, 0.5))
+  this.text:SetTextColor(HSL(hue+10, 1, 0.5))
+  local min, max = this:GetMinMaxValues()
+  if now > max then
+    this:SetMinMaxValues(now, now+5)
+  end
+end
+
 function AttackBarCore_OnEvent()
   if event == "ADDON_LOADED" and arg1 == "AttackBar2" then
-    log("AttackBar_OnEvent("..event..")")
+    -- Setup attack bars
     table.insert(attack_bars, AttackBar_PlayerMH)
     table.insert(attack_bars, AttackBar_PlayerOH)
     table.insert(attack_bars, AttackBar_EnemyMH)
     table.insert(attack_bars, AttackBar_EnemyOH)
-    for i,f in ipairs(attack_bars) do
-      f:SetPoint("CENTER", 0, -90-i*30)
-      f.spark = _G[f:GetName().."Spark"]
-    end
+    table.insert(attack_bars, AttackBar_GamerPower)
+
+    AttackBar_Init(AttackBar_PlayerMH,   -120)
+
+    AttackBar_Init(AttackBar_PlayerOH,   -150)
+
+    AttackBar_Init(AttackBar_EnemyMH,    -180)
+
+    AttackBar_Init(AttackBar_EnemyOH,    -210)
+
+    AttackBar_Init(AttackBar_GamerPower, -240, GamerPowerOnUpdate)
+    AttackBar_GamerPower.text:SetText("Gamer Power")
+    AttackBar_GamerPower:Activate()
 
   elseif event == "CHAT_MSG_COMBAT_SELF_HITS"
     or event == "CHAT_MSG_COMBAT_SELF_MISSES" then
     log("AttackBar_OnEvent("..event..")")
+    AttackBar_PlayerMH:Activate()
 
   elseif event == "PLAYER_LEAVE_COMAT" then
     log("AttackBar_OnEvent("..event..")")
+    AttackBar_PlayerMH:Deactivate()
   end
 end
 
@@ -76,26 +152,14 @@ function AttackBar_OnMouseUp()
   end
 end
 
-local delta = 3
-local a, b = 0, 0
-function AttackBar_OnUpdate()
-  a = GetTime()
-  if b < a then
-    b = a + delta
-    this:SetMinMaxValues(a, b)
-  end
-  this:SetValue(a)
-  log(a)
-end
-
 function AttackBar_ToggleLocked(_locked)
   locked = _locked or (not locked)
   demo = not locked
   for i, f in ipairs(attack_bars) do
-    if not locked then
-      f:Show()
-    else
+    if locked and not f.active then
       f:Hide()
+    else
+      f:Show()
     end
   end
 end

@@ -20,9 +20,6 @@
       <OnMouseUp>
         AttackBar_OnMouseUp()
       </OnMouseUp>
-      <OnUpdate>
-        AttackBar_OnUpdate()
-      </OnUpdate>
     </Scripts>
     <Size>
       <AbsDimension x="195" y="13"/>
@@ -30,10 +27,22 @@
     <Layers>
       <Layer level="BACKGROUND">
         <Texture name="$parentBackground" setAllPoints="true">
-          <Color r="0" g="0" b="0" a="0.5"/>
+          <Color r="0.0" g="0.0" b="0.0" a="0.5"/>
         </Texture>
       </Layer>
       <Layer level="ARTWORK">
+        <FontString name="$parentText" inherits="GameFontHighlight">
+          <Size>
+            <AbsDimension x="185" y="16"/>
+          </Size>
+          <Anchors>
+            <Anchor point="TOP">
+              <Offset>
+                <AbsDimension x="0" y="4"/>
+              </Offset>
+            </Anchor>
+          </Anchors>
+        </FontString>
         <Texture name="$parentBorder" file="Interface\CastingBar\UI-CastingBar-Border">
           <Size>
             <AbsDimension x="256" y="64"/>
@@ -83,10 +92,12 @@
       </Layer> -->
     </Layers>
     <BarTexture file="Interface\TargetingFrame\UI-StatusBar"/>
+    <BarColor r="0.0" g="0.0" b="1.0"/>
   </StatusBar>
   <!-- Attack bars -->
   <StatusBar name="AttackBar_PlayerMH" toplevel="true" parent="UIParent" inherits="AttackBarTemplate"/>
   <StatusBar name="AttackBar_PlayerOH" toplevel="true" parent="UIParent" inherits="AttackBarTemplate"/>
   <StatusBar name="AttackBar_EnemyMH" toplevel="true" parent="UIParent" inherits="AttackBarTemplate"/>
   <StatusBar name="AttackBar_EnemyOH" toplevel="true" parent="UIParent" inherits="AttackBarTemplate"/>
+  <StatusBar name="AttackBar_GamerPower" toplevel="true" parent="UIParent" inherits="AttackBarTemplate"/>
 </Ui>
