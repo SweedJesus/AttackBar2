@@ -82,6 +82,7 @@
         </Texture>
       </Layer> -->
     </Layers>
+    <BarTexture file="Interface\TargetingFrame\UI-StatusBar"/>
   </StatusBar>
   <!-- Attack bars -->
   <StatusBar name="AttackBar_PlayerMH" toplevel="true" parent="UIParent" inherits="AttackBarTemplate"/>
