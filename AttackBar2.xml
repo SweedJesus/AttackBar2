@@ -55,7 +55,7 @@
             </Anchor>
           </Anchors>
         </Texture>
-        <FontString name="$parentText" hidden="true" inherits="GameFontHighlight">
+        <FontString name="$parentText" inherits="GameFontHighlight">
           <Size>
             <AbsDimension x="185" y="16"/>
           </Size>
@@ -69,7 +69,7 @@
         </FontString>
       </Layer>
       <Layer level="OVERLAY">
-        <Texture name="$parentSpark" hidden="true" file="Interface\CastingBar\UI-CastingBar-Spark" alphaMode="ADD">
+        <Texture name="$parentSpark" file="Interface\CastingBar\UI-CastingBar-Spark" alphaMode="ADD">
           <Size>
             <AbsDimension x="32" y="32"/>
           </Size>
@@ -77,27 +77,54 @@
             <Anchor point="CENTER"/>
           </Anchors>
         </Texture>
-        <Texture name="$parentFlash" hidden="true" file="Interface\CastingBar\UI-CastingBar-Flash" alphaMode="ADD">
-          <Size>
-            <AbsDimension x="256" y="64"/>
-          </Size>
-          <Anchors>
-            <Anchor point="TOP">
-              <Offset>
-                <AbsDimension x="0" y="28"/>
-              </Offset>
-            </Anchor>
-          </Anchors>
-        </Texture>
-      </Layer> -->
+      </Layer>
     </Layers>
     <BarTexture file="Interface\TargetingFrame\UI-StatusBar"/>
-    <BarColor r="0.0" g="0.0" b="1.0"/>
   </StatusBar>
   <!-- Attack bars -->
-  <StatusBar name="AttackBar_PlayerMH" toplevel="true" parent="UIParent" inherits="AttackBarTemplate"/>
-  <StatusBar name="AttackBar_PlayerOH" toplevel="true" parent="UIParent" inherits="AttackBarTemplate"/>
-  <StatusBar name="AttackBar_EnemyMH" toplevel="true" parent="UIParent" inherits="AttackBarTemplate"/>
-  <StatusBar name="AttackBar_EnemyOH" toplevel="true" parent="UIParent" inherits="AttackBarTemplate"/>
-  <StatusBar name="AttackBar_GamerPower" toplevel="true" parent="UIParent" inherits="AttackBarTemplate"/>
+  <StatusBar name="AttackBar_PlayerMH" toplevel="true" parent="UIParent" inherits="AttackBarTemplate">
+    <Anchors>
+      <Anchor point="CENTER">
+        <Offset>
+          <AbsDimension x="0" y="-120"/>
+        </Offset>
+      </Anchor>
+    </Anchors>
+  </StatusBar>
+  <StatusBar name="AttackBar_PlayerOH" toplevel="true" parent="UIParent" inherits="AttackBarTemplate">
+    <Anchors>
+      <Anchor point="CENTER">
+        <Offset>
+          <AbsDimension x="0" y="-150"/>
+        </Offset>
+      </Anchor>
+    </Anchors>
+  </StatusBar>
+  <StatusBar name="AttackBar_EnemyMH" toplevel="true" parent="UIParent" inherits="AttackBarTemplate">
+    <Anchors>
+      <Anchor point="CENTER">
+        <Offset>
+          <AbsDimension x="0" y="-180"/>
+        </Offset>
+      </Anchor>
+    </Anchors>
+  </StatusBar>
+  <StatusBar name="AttackBar_EnemyOH" toplevel="true" parent="UIParent" inherits="AttackBarTemplate">
+    <Anchors>
+      <Anchor point="CENTER">
+        <Offset>
+          <AbsDimension x="0" y="-210"/>
+        </Offset>
+      </Anchor>
+    </Anchors>
+  </StatusBar>
+  <StatusBar name="AttackBar_GamerPower" toplevel="true" parent="UIParent" inherits="AttackBarTemplate">
+    <Anchors>
+      <Anchor point="CENTER">
+        <Offset>
+          <AbsDimension x="0" y="-240"/>
+        </Offset>
+      </Anchor>
+    </Anchors>
+  </StatusBar>
 </Ui>

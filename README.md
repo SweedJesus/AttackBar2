@@ -1,4 +1,9 @@
-Notes to self:
+# AttackBar(2)
+
+Status bars which keep track of auto-attack cooldowns.
+
+## Notes to self:
 - Frame XML isn't so bad
-- Frame event callbacks use no parameters (use globals instead: this, event,
-  arg1, arg2, etc.)
+- Frame script callbacks and their global variables:
+  - *OnLoad* **event** : string for calling event
+  - *OnUpdate* **arg1** : delta time
