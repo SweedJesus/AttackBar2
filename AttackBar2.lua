@@ -1,6 +1,6 @@
 -- Some utility stuff
 -- TODO: Remove later (move somewhere else)
-local function log(msg)
+local function print(msg)
     ChatFrame1:AddMessage(msg)
 end
 SlashCmdList["CLEAR"] = function()
@@ -47,16 +47,73 @@ end
 
 local _G = getfenv(0)
 
-local locked = true
-local active = false
-local demo = false
-local update = false
+AttackBarCore.locked = true
+local core = AttackBarCore
 
 local attack_bars = {}
 
+-- AttackBar initialization
+local function AttackBar_Init(this, y)
+  this:SetPoint("CENTER", 0, y)
+  this.text = _G[this:GetName().."Text"]
+  this.spark = _G[this:GetName().."Spark"]
+  this.nextOnUpdate = nil
+end
+
+-- AttackBar OnUpdate script handler (combat)
+local function AttackBar_OnUpdate()
+  local now = GetTime()
+  this:SetValue(now)
+  if now > this.max then
+    this:SetScript(this.nextOnUpdate)
+    if not UnitAffectingCombat("player") then
+      this:Hide()
+    end
+  end
+end
+
+-- AttackBar OnUpdate script handler (demo)
+local function AttackBar_OnUpdateDemo()
+  local now = GetTime()
+  this:SetValue(now)
+  if now > this.max then
+    this.max = now + 3
+    this:SetMinMaxValue(now, this.max)
+  end
+end
+
+-- GamerPower OnUpdate script handler
+local hue = 0
+local function GamerPower_OnUpdate()
+  local now = GetTime()
+  this:SetValue(now)
+  hue = math.mod(hue + arg1*10, 360)
+  this:SetStatusBarColor(HSL(hue, 1, 0.5))
+  this.text:SetTextColor(HSL(hue+10, 1, 0.5))
+  if now > this.max then
+    this.max = now+5
+    this:SetMinMaxValues(now, this.max)
+  end
+end
+
+-- AttackBar OnMouseDown script handler
+function AttackBar_OnMouseDown()
+  if not locked and arg1 == "LeftButton" then
+    this:StartMoving()
+  end
+end
+
+-- AttackBar OnMouseUp script handler
+function AttackBar_OnMouseUp()
+  if arg1 == "LeftButton" then
+    this:StopMovingOrSizing()
+  end
+end
+
+-- AttackBarCore OnLoad script handler
 function AttackBarCore_OnLoad()
   this:RegisterEvent("ADDON_LOADED")
-  --this:RegisterEvent("PLAYER_ENTER_COMBAT")
+  this:RegisterEvent("PLAYER_ENTER_COMBAT")
   this:RegisterEvent("PLAYER_LEAVE_COMBAT")
   --this:RegisterEvent("COMBAT_LOG_EVENT")
   --this:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
@@ -71,43 +128,7 @@ function AttackBarCore_OnLoad()
   --this:RegisterEvent("UNIT_SPELLCAST_SENT")
 end
 
-local function AttackBar_Activate(this)
-  this.active = true
-  this:Show()
-end
-
-local function AttackBar_Deactivate(this)
-  this.active = false
-  this:Hide()
-end
-
-local function AttackBar_Init(this, y, onUpdate)
-  this:SetPoint("CENTER", 0, y)
-  this.text = _G[this:GetName().."Text"]
-  this.spark = _G[this:GetName().."Spark"]
-  this.Activate = AttackBar_Activate
-  this.Deactivate = AttackBar_Deactivate
-  this.SetText = AttackBar_SetText
-  if onUpdate then
-    this:SetScript("OnUpdate", onUpdate)
-  end
-end
-
-local function AttackBarOnUpdate(
-
-local hue = 0
-local function GamerPowerOnUpdate()
-  local now = GetTime()
-  this:SetValue(GetTime())
-  hue = math.mod(hue + arg1*10, 360)
-  this:SetStatusBarColor(HSL(hue, 1, 0.5))
-  this.text:SetTextColor(HSL(hue+10, 1, 0.5))
-  local min, max = this:GetMinMaxValues()
-  if now > max then
-    this:SetMinMaxValues(now, now+5)
-  end
-end
-
+-- AttackBarCore OnEvent script handler
 function AttackBarCore_OnEvent()
   if event == "ADDON_LOADED" and arg1 == "AttackBar2" then
     -- Setup attack bars
@@ -117,48 +138,55 @@ function AttackBarCore_OnEvent()
     table.insert(attack_bars, AttackBar_EnemyOH)
     table.insert(attack_bars, AttackBar_GamerPower)
 
-    AttackBar_Init(AttackBar_PlayerMH,   -120)
+    AttackBar_Init(AttackBar_PlayerMH, -120)
+    AttackBar_PlayerMH.text:SetText(UnitName("player").." MH")
 
-    AttackBar_Init(AttackBar_PlayerOH,   -150)
+    AttackBar_Init(AttackBar_PlayerOH, -150)
+    AttackBar_PlayerOH.text:SetText(UnitName("player").." OH")
 
-    AttackBar_Init(AttackBar_EnemyMH,    -180)
+    AttackBar_Init(AttackBar_EnemyMH, -180)
+    AttackBar_EnemeyMH.text:SetText(UnitName("target")or"Enemy".." MH")
 
-    AttackBar_Init(AttackBar_EnemyOH,    -210)
+    AttackBar_Init(AttackBar_EnemyOH, -210)
+    AttackBar_EnemeyOH.text:SetText(UnitName("target")or"Enemy".." OH")
 
-    AttackBar_Init(AttackBar_GamerPower, -240, GamerPowerOnUpdate)
+    AttackBar_Init(AttackBar_GamerPower, -240)
     AttackBar_GamerPower.text:SetText("Gamer Power")
-    AttackBar_GamerPower:Activate()
+    AttackBar_GamerPower:Show()
+    AttackBar_GamerPower:SetScript("OnUpdate", GamerPower_OnUpdate)
+
+  elseif event == "PLAYER_ENTER_COMBAT" then
+    AttackBarCore_ToggleLocked(true, true)
+
+  elseif event == "PLAYER_LEAVE_COMBAT" then
+    f.nextOnUpdate = nil
 
   elseif event == "CHAT_MSG_COMBAT_SELF_HITS"
     or event == "CHAT_MSG_COMBAT_SELF_MISSES" then
-    log("AttackBar_OnEvent("..event..")")
-    AttackBar_PlayerMH:Activate()
-
-  elseif event == "PLAYER_LEAVE_COMAT" then
-    log("AttackBar_OnEvent("..event..")")
-    AttackBar_PlayerMH:Deactivate()
+    local now = GetTime()
+    local player_mh_speed = 1 -- TODO: Get attack speed value
+    f.max = now + player_mh_speed
+    f:SetMinMaxValues(now, this.max)
+    f:SetScript("OnUpdate", AttackBar_OnUpdate)
   end
 end
 
-function AttackBar_OnMouseDown()
-  if not locked and arg1 == "LeftButton" then
-    this:StartMoving()
+function AttackBarCore_ToggleLocked(locked, force)
+  force = force or false
+  if not force and UnitAffectingCombat("player") then
+    print("In combat!")
+    return
   end
-end
-
-function AttackBar_OnMouseUp()
-  if arg1 == "LeftButton" then
-    this:StopMovingOrSizing()
-  end
-end
-
-function AttackBar_ToggleLocked(_locked)
-  locked = _locked or (not locked)
-  demo = not locked
+  core.locked = locked or not core.locked
   for i, f in ipairs(attack_bars) do
-    if locked and not f.active then
-      f:Hide()
+    if core.locked then
+      f.nextOnUpdate = nil
+      if not f.active then
+        f.active = true
+        f:Hide()
+      end
     else
+      f:SetScript("OnUpdate", AttackBar_OnUpdateDemo)
       f:Show()
     end
   end
@@ -167,11 +195,11 @@ end
 local function SlashCommand(str)
   str = string.lower(str)
   if str == "lock" then
-    AttackBar_ToggleLocked()
-    log("AttackBar: "..(locked and "locked" or "unlocked"))
+    AttackBarCore_ToggleLocked()
+    print("AttackBar: "..(locked and "locked" or "unlocked"))
   else
-    log("AttackBar: Usage")
-    log("/ab [lock]")
+    print("AttackBar: Usage")
+    print("/ab [lock]")
   end
 end
 
