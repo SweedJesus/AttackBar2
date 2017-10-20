@@ -51,6 +51,8 @@ local _G = getfenv(0)
 
 local attackBars = {}
 
+local bar_width = 195 -- see the XML template
+
 -- AttackBar initialization
 local function AttackBar_Init(this)
   this.text = _G[this:GetName().."Text"]
@@ -67,7 +69,7 @@ local function AttackBar_OnUpdate()
   if this.active then
     local now = GetTime()
     this:SetValue(now)
-    local sparkPos = (now - this.min) / (this.max - this.min) * 195
+    local sparkPos = (now - this.min) / (this.max - this.min) * bar_width
     this.spark:SetPoint("CENTER", this, "LEFT", sparkPos, 0)
     if now > this.max then
       this.active = false
@@ -88,7 +90,7 @@ end
 local function AttackBar_OnUpdateDemo()
   local now = GetTime()
   this:SetValue(now)
-  local sparkPos = (now - this.min) / (this.max - this.min) * 195
+  local sparkPos = (now - this.min) / (this.max - this.min) * bar_width
   this.spark:SetPoint("CENTER", this, "LEFT", sparkPos, 0)
   if now > this.max then
     this.min = now
@@ -106,7 +108,7 @@ local function GamerPower_OnUpdate()
   hue = math.mod(hue + arg1*10, 360)
   this:SetStatusBarColor(HSL(hue, 1, 0.5))
   this.text:SetTextColor(HSL(hue+10, 1, 0.5))
-  local sparkPos = (now - this.min) / (this.max - this.min) * 195
+  local sparkPos = (now - this.min) / (this.max - this.min) * bar_width
   this.spark:SetPoint("CENTER", this, "LEFT", sparkPos, 0)
   if now > this.max then
     this.min = now
