@@ -4,10 +4,10 @@
   <Frame name="AttackBarCore">
     <Scripts>
       <OnLoad>
-        AttackBarCore_OnLoad()
+				AttackBar_OnLoad()
       </OnLoad>
       <OnEvent>
-        AttackBarCore_OnEvent()
+        AttackBar_OnEvent()
       </OnEvent>
     </Scripts>
   </Frame>
@@ -24,6 +24,13 @@
     <Size>
       <AbsDimension x="195" y="13"/>
     </Size>
+		<Anchors>
+			<Anchor point="CENTER">
+				<Offset>
+					<AbsDimension x="0" y="0"/>
+				</Offset>
+			</Anchor>
+		</Anchors>
     <Layers>
       <Layer level="BACKGROUND">
         <Texture name="$parentBackground" setAllPoints="true">
@@ -31,14 +38,26 @@
         </Texture>
       </Layer>
       <Layer level="ARTWORK">
-        <FontString name="$parentText" inherits="GameFontHighlight">
+        <FontString name="$parentLText" inherits="GameFontHighlight" justifyH="LEFT">
           <Size>
             <AbsDimension x="185" y="16"/>
           </Size>
           <Anchors>
-            <Anchor point="TOP">
+            <Anchor point="LEFT">
               <Offset>
-                <AbsDimension x="0" y="4"/>
+                <AbsDimension x="4" y="2"/>
+              </Offset>
+            </Anchor>
+          </Anchors>
+        </FontString>
+        <FontString name="$parentRText" inherits="GameFontHighlight" justifyH="RIGHT">
+          <Size>
+            <AbsDimension x="185" y="16"/>
+          </Size>
+          <Anchors>
+            <Anchor point="RIGHT">
+              <Offset>
+                <AbsDimension x="-4" y="2"/>
               </Offset>
             </Anchor>
           </Anchors>
@@ -55,18 +74,18 @@
             </Anchor>
           </Anchors>
         </Texture>
-        <FontString name="$parentText" inherits="GameFontHighlight">
-          <Size>
-            <AbsDimension x="185" y="16"/>
-          </Size>
-          <Anchors>
-            <Anchor point="TOP">
-              <Offset>
-                <AbsDimension x="0" y="5"/>
-              </Offset>
-            </Anchor>
-          </Anchors>
-        </FontString>
+        <!-- <FontString name="$parentText" inherits="GameFontHighlight"> -->
+          <!-- <Size> -->
+            <!-- <AbsDimension x="185" y="16"/> -->
+          <!-- </Size> -->
+          <!-- <Anchors> -->
+            <!-- <Anchor point="TOP"> -->
+              <!-- <Offset> -->
+                <!-- <AbsDimension x="0" y="5"/> -->
+              <!-- </Offset> -->
+            <!-- </Anchor> -->
+          <!-- </Anchors> -->
+        <!-- </FontString> -->
       </Layer>
       <Layer level="OVERLAY">
         <Texture name="$parentSpark" file="Interface\CastingBar\UI-CastingBar-Spark" alphaMode="ADD">
