@@ -1,6 +1,12 @@
 # AttackBar(2)
 
-Status bars which keep track of auto-attack cooldowns.
+Weapon swing tracker for Vanilla
+
+Currently:
+- Tracks player and target main hand
+
+Todo:
+- Offhand tracking
 
 ## Notes to self:
 - Frame XML isn't so bad

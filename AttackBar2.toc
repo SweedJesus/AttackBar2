@@ -1,3 +1,6 @@
 ## Interface: 11200
 ## Title: AttackBar2
+## Author: SweedJesus (Miraculin @ Nostalrius)
+## X-Website: https://nilsso.github.io/pages/vidya/wow/#addons
+## DefaultState: Enabled
 AttackBar2.xml
