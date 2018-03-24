@@ -1,6 +1,4 @@
-# AttackBar(2)
-
-Weapon swing tracker for Vanilla
+Weapon swing timer for Vanilla
 
 Currently:
 - Tracks player and target main hand
@@ -8,7 +6,8 @@ Currently:
 Todo:
 - Offhand tracking
 
-## Notes to self:
+### Development notes
+
 - Frame XML isn't so bad
 - Frame script callbacks and their global variables:
   - *OnLoad* **event** : string for calling event

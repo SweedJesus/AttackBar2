@@ -1,6 +1,6 @@
 ## Interface: 11200
-## Title: AttackBar2
+## Title: Swing
 ## Author: SweedJesus (Miraculin @ Nostalrius)
 ## X-Website: https://nilsso.github.io/pages/vidya/wow/#addons
 ## DefaultState: Enabled
-AttackBar2.xml
+Swing.xml

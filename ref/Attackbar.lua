@@ -1,11 +1,11 @@
-﻿pont=0.000
-pofft= 0.000
-ont = 0.000
-offt= 0.000
-ons = 0.000
-offs= 0.000
-offh = 0
-onh  = 0
+﻿p_mh_time=0.000
+p_oh_time= 0.000
+now = 0.000
+now = 0.000
+p_mh_speed = 0.000
+p_oh_speed= 0.000
+p_oh_swings = 0
+p_mh_swings  = 0
 epont=0.000
 epofft= 0.000
 eont = 0.000
@@ -68,6 +68,7 @@ function Abar_loaded()
 	Abar_OhText:SetJustifyH("Left")
 	ebar_VL()
 end
+
 function Abar_chat(msg)
 	msg = strlower(msg)
 	if msg == "fix" then
@@ -104,6 +105,7 @@ function Abar_chat(msg)
 		DEFAULT_CHAT_FRAME:AddMessage('mob- to turn on and off the enemy mob bar(s)');
 	end
 end
+
 function Abar_selfhit(arg1)
   local go = true;
   a,b,spell=string.find (arg1, "Your (.+) hits")
@@ -114,44 +116,50 @@ function Abar_selfhit(arg1)
   if go == false then 
     Abar_spellhit(spell);
   else
-		ons,offs=UnitAttackSpeed("player");
-		hd,ld,ohd,old = UnitDamage("player")
-		hd,ld= hd-math.fmod(hd,1),ld-math.fmod(ld,1)
-		if old then
-			ohd,old = ohd-math.fmod(ohd,1),old-math.fmod(old,1)
+		p_mh_speed, p_oh_speed = UnitAttackSpeed("player")
+		p_mh_max, p_mh_min, p_oh_max, p_oh_min = UnitDamage("player")
+		p_mh_max, p_mh_min = p_mh_max - math.fmod(p_mh_max, 1), p_mh_min - math.fmod(p_mh_min, 1)
+		if p_oh_min then
+			p_oh_max,p_oh_min = p_oh_max - math.fmod(p_oh_max, 1), p_oh_min - math.fmod(p_oh_min, 1)
 		end	
-		if offs then
-			ont,offt=GetTime(),GetTime()
-			if ((math.abs((ont-pont)-ons) <= math.abs((offt-pofft)-offs))and not(onh <= offs/ons)) or offh >= 	ons/offs then
-				if pofft == 0 then pofft=offt end
-				pont = ont
-				tons = ons
-				offh = 0
-				onh = onh +1
-				ons = ons - math.fmod(ons,0.01)
-				Abar_Mhrs(tons,"Main["..ons.."s]("..hd.."-"..ld..")",0,0,1)
+		if p_oh_speed then
+      now = GetTime()
+      if (math.abs((now - p_mh_time) - p_mh_speed) <= math.abs((now - p_oh_time) - p_oh_speed))
+        and not(p_mh_swings <= p_oh_speed / p_mh_speed)
+        or p_oh_swings >= p_mh_speed / p_oh_speed then
+        -- Player mainhand
+        -- if the absolute value of the difference between now, the last mainhand swing time, and the mainhand speed is
+        -- less-than or equal-to absolute value of now, the last offhand swing time and the offhand speed
+        -- and the number of mainhand swings is not less-than or equal-to the ratio the offhand speed to the mainhand speed
+        -- or if the number of offhand swings is greater than the ration of mainhand speed to offhand speed
+				if p_oh_time == 0 then p_oh_time = now end
+				p_mh_time = now
+				p_oh_swings = 0
+				p_mh_swings = p_mh_swings +1
+				p_mh_speed = p_mh_speed - math.fmod(p_mh_speed,0.01)
+				Abar_Mhrs(p_mh_speed,"Main["..p_mh_speed.."s]("..p_mh_max.."-"..p_mh_min..")",0,0,1)
 			else
-				pofft = offt
-				offh = offh+1
-				onh = 0
-				ohd,old = ohd-math.fmod(ohd,1),old-math.fmod(old,1)
-				offs = offs - math.fmod(offs,0.01)
-				Abar_Ohs(offs,"Off["..offs.."s]("..ohd.."-"..old..")",0,0,1)
+        -- Player offhand
+				p_oh_time = now
+				p_oh_swings = p_oh_swings+1
+				p_mh_swings = 0
+				p_oh_max,p_oh_min = p_oh_max-math.fmod(p_oh_max,1),p_oh_min-math.fmod(p_oh_min,1)
+				p_oh_speed = p_oh_speed - math.fmod(p_oh_speed,0.01)
+				Abar_Ohs(p_oh_speed,"Off["..p_oh_speed.."s]("..p_oh_max.."-"..p_oh_min..")",0,0,1)
 			end
 		else
-			ont=GetTime()
-			tons = ons
-			ons = ons - math.fmod(ons,0.01)
-			Abar_Mhrs(tons,"Main["..ons.."s]("..hd.."-"..ld..")",0,0,1)
+			now=GetTime()
+			p_mh_speed = p_mh_speed - math.fmod(p_mh_speed,0.01)
+			Abar_Mhrs(p_mh_speed,"Main["..p_mh_speed.."s]("..p_mh_max.."-"..p_mh_min..")",0,0,1)
 		end
 	end
 end
 
 function Abar_reset()
-	pont=0.000
-	pofft= 0.000
-	ont=0.000
-	offt= 0.000
+	p_mh_time=0.000
+	p_oh_time= 0.000
+	now=0.000
+	now= 0.000
 	onid=0
 	offid=0
 end
@@ -181,16 +189,15 @@ function Abar_spellhit(arg1)
 	elseif spell == "Shoot" and abar.range==true then
 		trs=rs
 		rs = rs-math.fmod(rs,0.01)
-		Abar_Mhrs(trs,"Wand["..ons.."s]("..rhd.."-"..rld..")",.7,.1,1)
+		Abar_Mhrs(trs,"Wand["..p_mh_speed.."s]("..rhd.."-"..rld..")",.7,.1,1)
 	elseif (spell == "Raptor Strike" or spell == "Heroic Strike" or
 	spell == "Maul" or spell == "Cleave") and abar.h2h==true then
-		hd,ld,ohd,lhd = UnitDamage("player")
-		hd,ld= hd-math.fmod(hd,1),ld-math.fmod(ld,1)
-		if pofft == 0 then pofft=offt end
-		pont = ont
-		tons = ons
-		ons = ons - math.fmod(ons,0.01)
-		Abar_Mhrs(tons,"Main["..ons.."s]("..hd.."-"..ld..")",0,0,1)
+		p_mh_max,p_mh_min,p_oh_max,lhd = UnitDamage("player")
+		p_mh_max,p_mh_min= p_mh_max-math.fmod(p_mh_max,1),p_mh_min-math.fmod(p_mh_min,1)
+		if p_oh_time == 0 then p_oh_time=now end
+		p_mh_time = now
+		p_mh_speed = p_mh_speed - math.fmod(p_mh_speed,0.01)
+		Abar_Mhrs(p_mh_speed,"Main["..p_mh_speed.."s]("..p_mh_max.."-"..p_mh_min..")",0,0,1)
 	end
 end
 
@@ -333,7 +340,7 @@ function ebar_set(targ)
 		epofft = eofft
 		eoffh = eoffh+1
 		eonh = 0
-		eohd,eold = ohd-math.fmod(eohd,1),old-math.fmod(eold,1)
+		eohd,eold = p_oh_max-math.fmod(eohd,1),p_oh_min-math.fmod(eold,1)
 		eoffs = eoffs - math.fmod(eoffs,0.01)
 		ebar_ohs(eoffs,"Target Off["..eoffs.."s]",1,.1,.1)
 	end

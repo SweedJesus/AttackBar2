@@ -1,24 +1,26 @@
 <Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/">
-  <Script file="AttackBar2.lua"/>
-  <!-- Addon -->
-  <Frame name="AttackBarCore">
+  <Script file="Swing.lua"/>
+  <!-- Addon core
+       -->
+  <Frame name="Swing">
     <Scripts>
       <OnLoad>
-				AttackBar_OnLoad()
+				Swing_OnLoad()
       </OnLoad>
       <OnEvent>
-        AttackBar_OnEvent()
+        Swing_OnEvent()
       </OnEvent>
     </Scripts>
   </Frame>
-  <!-- Attack bar template -->
-  <StatusBar name="AttackBarTemplate" drawLayer="BORDER" movable="true" hidden="true" virtual="true">
+  <!-- Attack bar template
+       -->
+  <StatusBar name="SwingBarTemplate" drawLayer="BORDER" movable="true" hidden="true" virtual="true">
     <Scripts>
       <OnMouseDown>
-        AttackBar_OnMouseDown()
+        SwingBar_OnMouseDown()
       </OnMouseDown>
       <OnMouseUp>
-        AttackBar_OnMouseUp()
+        SwingBar_OnMouseUp()
       </OnMouseUp>
     </Scripts>
     <Size>
@@ -74,18 +76,6 @@
             </Anchor>
           </Anchors>
         </Texture>
-        <!-- <FontString name="$parentText" inherits="GameFontHighlight"> -->
-          <!-- <Size> -->
-            <!-- <AbsDimension x="185" y="16"/> -->
-          <!-- </Size> -->
-          <!-- <Anchors> -->
-            <!-- <Anchor point="TOP"> -->
-              <!-- <Offset> -->
-                <!-- <AbsDimension x="0" y="5"/> -->
-              <!-- </Offset> -->
-            <!-- </Anchor> -->
-          <!-- </Anchors> -->
-        <!-- </FontString> -->
       </Layer>
       <Layer level="OVERLAY">
         <Texture name="$parentSpark" file="Interface\CastingBar\UI-CastingBar-Spark" alphaMode="ADD">
@@ -100,8 +90,9 @@
     </Layers>
     <BarTexture file="Interface\TargetingFrame\UI-StatusBar"/>
   </StatusBar>
-  <!-- Attack bars -->
-  <StatusBar name="AttackBar_PlayerMH" toplevel="true" parent="UIParent" inherits="AttackBarTemplate">
+  <!-- Attack bars
+       -->
+  <StatusBar name="SwingBar_PlayerMH" toplevel="true" parent="UIParent" inherits="SwingBar_Template">
     <Anchors>
       <Anchor point="CENTER">
         <Offset>
@@ -110,7 +101,7 @@
       </Anchor>
     </Anchors>
   </StatusBar>
-  <StatusBar name="AttackBar_PlayerOH" toplevel="true" parent="UIParent" inherits="AttackBarTemplate">
+  <StatusBar name="SwingBar_PlayerOH" toplevel="true" parent="UIParent" inherits="SwingBar_Template">
     <Anchors>
       <Anchor point="CENTER">
         <Offset>
@@ -119,7 +110,7 @@
       </Anchor>
     </Anchors>
   </StatusBar>
-  <StatusBar name="AttackBar_EnemyMH" toplevel="true" parent="UIParent" inherits="AttackBarTemplate">
+  <StatusBar name="SwingBar_EnemyMH" toplevel="true" parent="UIParent" inherits="SwingBar_Template">
     <Anchors>
       <Anchor point="CENTER">
         <Offset>
@@ -128,7 +119,7 @@
       </Anchor>
     </Anchors>
   </StatusBar>
-  <StatusBar name="AttackBar_EnemyOH" toplevel="true" parent="UIParent" inherits="AttackBarTemplate">
+  <StatusBar name="SwingBar_EnemyOH" toplevel="true" parent="UIParent" inherits="SwingBar_Template">
     <Anchors>
       <Anchor point="CENTER">
         <Offset>
@@ -137,7 +128,7 @@
       </Anchor>
     </Anchors>
   </StatusBar>
-  <StatusBar name="AttackBar_GamerPower" toplevel="true" parent="UIParent" inherits="AttackBarTemplate">
+  <StatusBar name="SwingBar_GaymerPower" toplevel="true" parent="UIParent" inherits="SwingBar_Template">
     <Anchors>
       <Anchor point="CENTER">
         <Offset>

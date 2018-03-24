@@ -55,18 +55,18 @@ if not HSL then
 end
 
 -- -----------------------------------------------------------------------------
--- AttackBar2
+-- Swing
 
 local _G = getfenv(0)
 
-local attackBars = {}
+local bars = {}
 
 local bar_width = 195 -- see the XML template
 
 local GAYMER_DELTA = 3
 
 -- Bar initialization helper
-local function AttackBar_InitBar(frame)
+local function SwingBar_Init(frame)
   frame.ltext = _G[frame:GetName().."LText"]
   frame.rtext = _G[frame:GetName().."RText"]
   frame.spark = _G[frame:GetName().."Spark"]
@@ -75,10 +75,11 @@ local function AttackBar_InitBar(frame)
   frame.later = 0
   frame.active = false
   frame.spark:SetAlpha(0)
+	table.insert(bars, frame)
 end
 
 --- Bar update handler
-local function AttackBar_OnUpdate()
+local function SwingBar_OnUpdate()
 	-- TODO: Fix if for MH or OH, and if for player or target
   if this.active then
 		local now = GetTime()
@@ -104,7 +105,7 @@ local function AttackBar_OnUpdate()
 end
 
 --- Bar update handler (demo mode)
-local function AttackBar_OnUpdateDemo()
+local function SwingBar_DemoOnUpdate()
 	-- TODO: Fix if for MH or OH, and if for player or target
   local now = GetTime()
 	local delta = this.later - now
@@ -122,7 +123,7 @@ end
 
 --- Special bar (GaymerPower) update handler
 local hue = 0
-local function GamerPower_OnUpdate()
+local function GaymerPower_OnUpdate()
   local now = GetTime()
 	local delta = this.later - now
   if delta <= 0 then
@@ -142,21 +143,21 @@ local function GamerPower_OnUpdate()
 end
 
 --- Bar mouse down handler
-function AttackBar_OnMouseDown()
-  if not AttackBarCore.locked and arg1 == "LeftButton" then
+function SwingBar_OnMouseDown()
+  if not Swing.locked and arg1 == "LeftButton" then
     this:StartMoving()
   end
 end
 
 --- Bar mouse up handler
-function AttackBar_OnMouseUp()
+function SwingBar_OnMouseUp()
   if arg1 == "LeftButton" then
     this:StopMovingOrSizing()
   end
 end
 
 --- Startup handler
-function AttackBar_OnLoad()
+function Swing_OnLoad()
 	this.locked = true
 	-- Events I know I need
 	this:RegisterEvent("VARIABLES_LOADED")
@@ -177,102 +178,86 @@ function AttackBar_OnLoad()
 end
 
 --- Core and frame initialization
-function AttackBar_Init()
-	-- Enemy main-hand
-	table.insert(attackBars, AttackBar_PlayerMH)
-	AttackBar_InitBar(AttackBar_PlayerMH)
-	AttackBar_PlayerMH.ltext:SetText("P MH")
-	AttackBar_PlayerMH:SetStatusBarColor(HSL(240, 1, 0.5))
-	AttackBar_PlayerMH:SetScript("OnUpdate", AttackBar_OnUpdate)
-
-	-- Enemy off-hand
-	table.insert(attackBars, AttackBar_PlayerOH)
-	AttackBar_InitBar(AttackBar_PlayerOH)
-	AttackBar_PlayerOH.ltext:SetText("P OH")
-	AttackBar_PlayerOH:SetStatusBarColor(HSL(220, 1, 0.5))
-	AttackBar_PlayerOH:SetScript("OnUpdate", AttackBar_OnUpdate)
-
-	-- Enemy main-hand
-	table.insert(attackBars, AttackBar_EnemyMH)
-	AttackBar_InitBar(AttackBar_EnemyMH)
-	AttackBar_EnemyMH.ltext:SetText("E MH")
-	AttackBar_EnemyMH:SetStatusBarColor(HSL(0, 1, 0.5))
-	AttackBar_EnemyMH:SetScript("OnUpdate", AttackBar_OnUpdate)
-
-	-- Enemy off-hand
-	table.insert(attackBars, AttackBar_EnemyOH)
-	AttackBar_InitBar(AttackBar_EnemyOH)
-	AttackBar_EnemyOH.ltext:SetText("E OH")
-	AttackBar_EnemyOH:SetStatusBarColor(HSL(20, 1, 0.5))
-	AttackBar_EnemyOH:SetScript("OnUpdate", AttackBar_OnUpdate)
+function Swing_Init()
+	SwingBar_Init(SwingBar_PlayerMH, "P MH", HSL(240, 1, 0.5), SwingBar_OnUpdate)
+	SwingBar_Init(SwingBar_PlayerOH, "P OH", HSL(220, 1, 0.5), SwingBar_OnUpdate)
+	SwingBar_Init(SwingBar_EnemyMH, "E MH", HSL(0, 1, 0.5), SwingBar_OnUpdate)
+	SwingBar_Init(SwingBar_EnemyOH, "E OH", HSL(20, 1, 0.5), SwingBar_OnUpdate)
 
 	-- Gaymer Power bar
-	AttackBar_InitBar(AttackBar_GamerPower)
-	AttackBar_GamerPower.ltext:SetText("Gaymer Power")
-	AttackBar_GamerPower.spark:SetAlpha(1)
-	AttackBar_GamerPower:Show()
-	AttackBar_GamerPower:SetScript("OnUpdate", GamerPower_OnUpdate)
+	SwingBar_Init(SwingBar_GaymerPower)
+	SwingBar_GaymerPower.ltext:SetText("Gaymer Power")
+	SwingBar_GaymerPower.spark:SetAlpha(1)
+	SwingBar_GaymerPower:Show()
+	SwingBar_GaymerPower:SetScript("OnUpdate", GaymerPower_OnUpdate)
 	
-	AttackBar_ToggleLocked(false) -- for testing, remove later
+	Swing_ToggleLocked(false) -- for testing, remove later
+end
+
+local function WhichWeapon()
+	local mh_speed, oh_speed = UnitAttackSpeed("player")
+	--local mh_min_dmg, mh_max_dmg, oh_min_dmg, oh_max_dmg = UnitDamage("player")
+  local now = GetTime()
+
 end
 
 --- Attack hit handler
 -- @global arg1 Combat log string for event
 --		          e.g. "You hit Mottled Boar for 11"
-function AttackBar_SelfHit()
+function Swing_SelfHit()
 	local mh_speed, oh_speed = UnitAttackSpeed("player")
-	local mh_min_dmg, mh_max_dmg, oh_min_dmg, oh_max_dmg = UnitDamage("player")
+	local mh_min, mh_max, oh_min, oh_max = UnitDamage("player")
 	if oh_speed then
 		
 	end
 	
-	AttackBar_PlayerMH.max = mh_speed
-	AttackBar_PlayerMH.later = GetTime() + mh_speed
-	AttackBar_PlayerMH:SetMinMaxValues(0, mh_speed)
-	AttackBar_PlayerMH.active = true
-	AttackBar_PlayerMH.spark:SetAlpha(1)
-	AttackBar_PlayerMH:Show()
+	SwingBar_PlayerMH.max = mh_speed
+	SwingBar_PlayerMH.later = GetTime() + mh_speed
+	SwingBar_PlayerMH:SetMinMaxValues(0, mh_speed)
+	SwingBar_PlayerMH.active = true
+	SwingBar_PlayerMH.spark:SetAlpha(1)
+	SwingBar_PlayerMH:Show()
 end
 
 --- Spell hit handler
 -- @global arg1 Combat log string for event
 --		          e.g. "Your Heroic Strike hits Mottled Boar for 24"
-function AttackBar_SelfSpellHit()
+function Swing_SelfSpellHit()
 	if string.find(arg1, "Heroic Strike") then
-		AttackBar_SelfHit(logString)
+		Swing_SelfHit(logString)
 	end
 end
 
 ---	Registered event handler
-function AttackBar_OnEvent()
+function Swing_OnEvent()
 	if event == "VARIABLES_LOADED" then
-		AttackBar_Init()
+		Swing_Init()
   elseif event == "PLAYER_ENTER_COMBAT" then
-		AttackBar_ToggleLocked(true, true)
+		Swing_ToggleLocked(true, true)
   elseif event == "CHAT_MSG_COMBAT_SELF_HITS" or event == "CHAT_MSG_COMBAT_SELF_MISSES" then
-		AttackBar_SelfHit()
+		Swing_SelfHit()
 	elseif event == "CHAT_MSG_SPELL_SELF_DAMAGE" then
-		AttackBar_SelfSpellHit()
+		Swing_SelfSpellHit()
   end
 end
 
----	Frame lock toggle
-function AttackBar_ToggleLocked(locked, force)
+---	Bar lock toggle and demo mode
+function Swing_ToggleLocked(locked, force)
   force = force or false
   if not force and UnitAffectingCombat("player") then
     print("Unlocking disabled while in combat!")
     return
   end
-  AttackBarCore.locked = locked or not AttackBarCore.locked
-  for i, f in ipairs(attackBars) do
+  Swing.locked = locked or not Swing.locked
+  for i, f in ipairs(bars) do
     f.max = 0
-    if AttackBarCore.locked then
+    if Swing.locked then
       --f.nextOnUpdate = nil
-      f:SetScript("OnUpdate", AttackBar_OnUpdate)
+      f:SetScript("OnUpdate", SwingBar_OnUpdate)
       f.active = false
       f:Hide()
     else
-      f:SetScript("OnUpdate", AttackBar_OnUpdateDemo)
+      f:SetScript("OnUpdate", SwingBar_DemoOnUpdate)
 			f.later = 0
       f.spark:SetAlpha(1)
       f:Show()
@@ -280,33 +265,33 @@ function AttackBar_ToggleLocked(locked, force)
   end
 end
 
----	Chat command function
-function AttackBar_SlashCommand(str)
+---	Slash command function
+function Swing_SlashCommand(str)
   str = string.lower(str)
   if str == "lock" then
-    AttackBar_ToggleLocked()
-    print("[AttackBar] Attack bars "..(AttackBarCore.locked and "locked" or "unlocked"))
+    Swing_ToggleLocked()
+    print("[Swing] Attack bars "..(Swing.locked and "locked" or "unlocked"))
   elseif str == "reset-positions" then
-    AttackBar_PlayerMH:ClearAllPoints()
-    AttackBar_PlayerMH:SetPoint("CENTER", 0, -120)
+    SwingBar_PlayerMH:ClearAllPoints()
+    SwingBar_PlayerMH:SetPoint("CENTER", 0, -120)
 
-    AttackBar_PlayerOH:ClearAllPoints()
-    AttackBar_PlayerOH:SetPoint("CENTER", 0, -150)
+    SwingBar_PlayerOH:ClearAllPoints()
+    SwingBar_PlayerOH:SetPoint("CENTER", 0, -150)
 
-    AttackBar_EnemyMH:ClearAllPoints()
-    AttackBar_EnemyMH:SetPoint("CENTER", 0, -180)
+    SwingBar_EnemyMH:ClearAllPoints()
+    SwingBar_EnemyMH:SetPoint("CENTER", 0, -180)
 
-    AttackBar_EnemyOH:ClearAllPoints()
-    AttackBar_EnemyOH:SetPoint("CENTER", 0, -210)
+    SwingBar_EnemyOH:ClearAllPoints()
+    SwingBar_EnemyOH:SetPoint("CENTER", 0, -210)
 
-    AttackBar_GamerPower:ClearAllPoints()
-    AttackBar_GamerPower:SetPoint("CENTER", 0, -240)
+    SwingBar_GaymerPower:ClearAllPoints()
+    SwingBar_GaymerPower:SetPoint("CENTER", 0, -240)
   else
-    print("[AttackBar]")
+    print("[Swing]")
     print("Usage: /ab <lock/reset-positions>")
   end
 end
 
-SlashCmdList["ATTACKBAR"] = AttackBar_SlashCommand
-SLASH_ATTACKBAR1 = "/attackbar"
-SLASH_ATTACKBAR2 = "/ab"
+--- Slash command
+SlashCmdList["SWING"] = Swing_SlashCommand
+SLASH_SWING1 = "/swing"
