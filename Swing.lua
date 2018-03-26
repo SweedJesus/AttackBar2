@@ -1,7 +1,12 @@
 -- Some utility stuff
 -- TODO: Remove later (move somewhere else)
-function print(msg)
-    DEFAULT_CHAT_FRAME:AddMessage(msg)
+
+local print = print or function(msg)
+	DEFAULT_CHAT_FRAME:AddMessage(msg)
+end
+
+function contains(t, v)
+	return t[v] ~= nil
 end
 
 SlashCmdList["CLEAR"] = function()
@@ -28,76 +33,118 @@ SLASH_RL1 = "/rl"
 -- @param h Hue (0-360)
 -- @param s Saturation (0-1)
 -- @param l Lightness (0-1)
-if not HSL then
-  function HSL(h, s, l)
-		h, s, l = mod(abs(h), 360) / 60, abs(s), abs(l)
-		if s > 1 then s = mod(s, 1) end
-		if l > 1 then l = mod(l, 1) end
-		local c = (1 - abs(2 * l - 1)) * s
-		local x = c * (1 - abs(mod(h, 2) - 1))
-		local r, g, b
-		if h < 1 then
-				r, g, b = c, x, 0
-		elseif h < 2 then
-				r, g, b = x, c, 0
-		elseif h < 3 then
-				r, g, b = 0, c, x
-		elseif h < 4 then
-				r, g, b = 0, x, c
-		elseif h < 5 then
-				r, g, b = x, 0, c
-		else
-				r, g, b = c, 0, x
-		end
-		local m = l - c / 2
-		return r + m, g + m, b + m
-  end
+function HSL(h, s, l)
+	h, s, l = mod(abs(h), 360) / 60, abs(s), abs(l)
+	if s > 1 then s = mod(s, 1) end
+	if l > 1 then l = mod(l, 1) end
+	local c = (1 - abs(2 * l - 1)) * s
+	local x = c * (1 - abs(mod(h, 2) - 1))
+	local r, g, b
+	if h < 1 then
+			r, g, b = c, x, 0
+	elseif h < 2 then
+			r, g, b = x, c, 0
+	elseif h < 3 then
+			r, g, b = 0, c, x
+	elseif h < 4 then
+			r, g, b = 0, x, c
+	elseif h < 5 then
+			r, g, b = x, 0, c
+	else
+			r, g, b = c, 0, x
+	end
+	local m = l - c / 2
+	return r + m, g + m, b + m
 end
 
 -- -----------------------------------------------------------------------------
--- Swing
+-- Swing addon
 
 local _G = getfenv(0)
 
+-- Upvalues, constants, enums
+
+local gaymerDelta = 3
+local gaymerHue = 0
+
+local energy
+
 local bars = {}
+local util
+local playerMH
+local playerOH
+local targetMH
+local targetOH
 
-local bar_width = 195 -- see the XML template
+local delta = 0
 
-local GAYMER_DELTA = 3
+local BAR_WIDTH = 195 -- see the XML template
+local MH, OH = 0, 1
+local ATTACK_SPELLS = {
+	["Heroic Strike"] = true,
+	["Raptor Strike"] = true
+}
 
 -- Bar initialization helper
-local function SwingBar_Init(frame)
-  frame.ltext = _G[frame:GetName().."LText"]
-  frame.rtext = _G[frame:GetName().."RText"]
-  frame.spark = _G[frame:GetName().."Spark"]
-  frame.nextOnUpdate = nil
-  frame.now = 0
-  frame.later = 0
-  frame.active = false
-  frame.spark:SetAlpha(0)
-	table.insert(bars, frame)
+local function Swing_BarInit(this, func, r, g, b)
+  this.text = _G[this:GetName().."Text"]
+  this.spark = _G[this:GetName().."Spark"]
+	this.max = 0
+	this.before = 0
+  this.later = 0
+  this.active = false
+  this.spark:SetAlpha(1)
+	this:SetScript("OnUpdate", func)
+	this:SetStatusBarColor(r, g, b)
+end
+
+local function Swing_SwingBarInit(this, func, unit, hand, r, g, b)
+	Swing_BarInit(this, func, r, g, b)
+	this.unit = unit
+	this.hand = hand
+	this.speed = 0
+	this.minDmg = 0
+	this.maxDmg = 0
+	this.count = 0
+end
+
+--- Timer bar updater
+local function UpdateBar(this, now)
+	this:SetValue(now)
+	this.spark:SetPoint("CENTER", this, "LEFT", (this.max - (this.later - now)) / this.max * BAR_WIDTH, 0)
+end
+
+--- Timer bar starter
+local function StartBar(this, now, speed)
+	this.max = speed
+	this.before = now
+	this.later = now + speed
+	this:SetMinMaxValues(now, now + speed)
+	this:Show()
+	this.active = true
+	UpdateBar(this, now)
 end
 
 --- Bar update handler
-local function SwingBar_OnUpdate()
-	-- TODO: Fix if for MH or OH, and if for player or target
+local function Swing_BarOnUpdate()
   if this.active then
 		local now = GetTime()
-		local delta = this.later - now
-		if delta <= 0 then
+		if now >= this.later then
 			this.active = false
-			this.rtext:SetText("")
-			return
+			if this.hand == MH then
+				this.handTime = 0
+			end
+		else
+			UpdateBar(this, now)
+			--this.text:SetText(format("%5.2f", max(0, delta)))
 		end
-		this:SetValue(delta)
-		this.rtext:SetText(format("%5.2f", max(0, delta)))
-		this.spark:SetPoint("CENTER", this, "LEFT", delta / this.max * bar_width, 0)
   else
-    local sparkAlpha = this.spark:GetAlpha()
-    if sparkAlpha > 0 then
-      sparkAlpha = math.max(sparkAlpha - CASTING_BAR_ALPHA_STEP, 0)
-      this.spark:SetAlpha(sparkAlpha)
-    end
+    -- local sparkAlpha = this.spark:GetAlpha()
+    -- if sparkAlpha > 0 then
+      -- sparkAlpha = max(sparkAlpha - CASTING_BAR_ALPHA_STEP, 0)
+      -- this.spark:SetAlpha(sparkAlpha)
+    -- end
+    this.spark:SetAlpha(0)
     if not UnitAffectingCombat("player") then
       this:Hide()
     end
@@ -105,144 +152,157 @@ local function SwingBar_OnUpdate()
 end
 
 --- Bar update handler (demo mode)
-local function SwingBar_DemoOnUpdate()
-	-- TODO: Fix if for MH or OH, and if for player or target
-  local now = GetTime()
-	local delta = this.later - now
-	if delta <= 0 then
-		local player_mh_speed, player_oh_speed = UnitAttackSpeed("player")
-		this.max = player_mh_speed
-		this.later = now + player_mh_speed
-		this:SetMinMaxValues(0, player_mh_speed)
-		return
+local function Swing_BarDemoOnUpdate()
+	local now = GetTime()
+	if now >= this.later then
+		local mhSpeed, ohSpeed = UnitAttackSpeed(this.unit)
+		local speed = gaymerDelta
+		if mhSpeed > 0 then
+			if this.hand == MH then
+				speed = mhSpeed
+			elseif this.hand == OH then
+				speed = ohSpeed or mhSpeed
+			end
+		end
+		StartBar(this, now, speed)
   end
-  this:SetValue(delta)
-	this.rtext:SetText(format("%5.2f", max(0, delta)))
-  this.spark:SetPoint("CENTER", this, "LEFT", delta / this.max * bar_width, 0)
+	UpdateBar(this, now)
+	-- this.text:SetText(format("%5.2f", max(0, delta)))
+end
+
+local function Swing_EnergyOnUpdate()
+	local now = GetTime()
+	if now - this.before >= 2 then -- Energy tick time is 2 seconds
+	end
 end
 
 --- Special bar (GaymerPower) update handler
-local hue = 0
-local function GaymerPower_OnUpdate()
-  local now = GetTime()
+local function Swing_GaymerPowerOnUpdate()
+	local now = GetTime()
 	local delta = this.later - now
   if delta <= 0 then
-    this.max = GAYMER_DELTA
-		this.later = now + GAYMER_DELTA
-    this:SetMinMaxValues(0, GAYMER_DELTA)
+    this.max = gaymerDelta
+		this.later = now + gaymerDelta
+    this:SetMinMaxValues(0, gaymerDelta)
 		return
   end
   this:SetValue(delta)
-  hue = math.mod(hue + arg1*10, 360)
-	local r1, g1, b1 = HSL(hue, 1, 0.5)
+  gaymerHue = math.mod(gaymerHue + arg1*10, 360)
+	local r1, g1, b1 = HSL(gaymerHue, 1, 0.5)
 	local r2, g2, b2 =  r1, g1, b1
   this:SetStatusBarColor(r1, g1, b1)
-  this.ltext:SetTextColor(r2, g2, b2)
-  this.rtext:SetTextColor(r2, g2, b2)
-  this.spark:SetPoint("CENTER", this, "LEFT", delta / this.max * bar_width, 0)
+  this.text:SetTextColor(r2, g2, b2)
+  this.spark:SetPoint("CENTER", this, "LEFT", delta / this.max * BAR_WIDTH, 0)
 end
 
---- Bar mouse down handler
-function SwingBar_OnMouseDown()
-  if not Swing.locked and arg1 == "LeftButton" then
-    this:StartMoving()
-  end
+local function UtilToEnergy()
+	local now = GetTime()
+	Swing_BarInit(util, Swing_EnergyOnUpdate, 255, 255, 0)
+	util:SetMinMaxValues(now, now)
+	util:Show()
 end
 
---- Bar mouse up handler
-function SwingBar_OnMouseUp()
-  if arg1 == "LeftButton" then
-    this:StopMovingOrSizing()
-  end
+local function UtilToGaymer()
+	Swing_BarInit(util, Swing_GaymerPowerOnUpdate, HSL(gaymerHue, 1, 0.5))
+	util.text:SetText("Gaymer Power")
+	util:Show()
 end
 
---- Startup handler
-function Swing_OnLoad()
-	this.locked = true
-	-- Events I know I need
-	this:RegisterEvent("VARIABLES_LOADED")
-	this:RegisterEvent("PLAYER_ENTER_COMBAT")
-	this:RegisterEvent("PLAYER_LEAVE_COMBAT")
-	this:RegisterEvent("CHAT_MSG_COMBAT_SELF_HITS")
-	this:RegisterEvent("CHAT_MSG_COMBAT_SELF_MISSES")
-	this:RegisterEvent("CHAT_MSG_SPELL_SELF_DAMAGE")
-	this:RegisterEvent("CHAT_MSG_COMBAT_CREATURE_VS_SELF_HITS")
-	this:RegisterEvent("CHAT_MSG_COMBAT_CREATURE_VS_SELF_MISSES")
-	this:RegisterEvent("CHAT_MSG_COMBAT_HOSTILEPLAYER_HITS")
-	this:RegisterEvent("CHAT_MSG_COMBAT_HOSTILEPLAYER_MISSES")
-	-- Events that aren't implemented or that I have no idea about
-	-- this:RegisterEvent("COMBAT_LOG_EVENT")
-	-- this:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
-	-- this:RegisterEvent("UNIT_ATTACK_SPEED")
-	-- this:RegisterEvent("UNIT_SPELLCAST_SENT")
+--- Get the ID of the weapon that the player swung
+local function GetPlayerSwungWeapon(now)
+	return abs(now - playerMH.before - playerMH.speed) <= abs(now - playerOH.before - playerOH.speed) or
+		playerMH.count <= playerOH.count
 end
 
---- Core and frame initialization
-function Swing_Init()
-	SwingBar_Init(SwingBar_PlayerMH, "P MH", HSL(240, 1, 0.5), SwingBar_OnUpdate)
-	SwingBar_Init(SwingBar_PlayerOH, "P OH", HSL(220, 1, 0.5), SwingBar_OnUpdate)
-	SwingBar_Init(SwingBar_EnemyMH, "E MH", HSL(0, 1, 0.5), SwingBar_OnUpdate)
-	SwingBar_Init(SwingBar_EnemyOH, "E OH", HSL(20, 1, 0.5), SwingBar_OnUpdate)
-
-	-- Gaymer Power bar
-	SwingBar_Init(SwingBar_GaymerPower)
-	SwingBar_GaymerPower.ltext:SetText("Gaymer Power")
-	SwingBar_GaymerPower.spark:SetAlpha(1)
-	SwingBar_GaymerPower:Show()
-	SwingBar_GaymerPower:SetScript("OnUpdate", GaymerPower_OnUpdate)
-	
-	Swing_ToggleLocked(false) -- for testing, remove later
-end
-
-local function WhichWeapon()
-	local mh_speed, oh_speed = UnitAttackSpeed("player")
-	--local mh_min_dmg, mh_max_dmg, oh_min_dmg, oh_max_dmg = UnitDamage("player")
-  local now = GetTime()
-
-end
-
---- Attack hit handler
--- @global arg1 Combat log string for event
---		          e.g. "You hit Mottled Boar for 11"
-function Swing_SelfHit()
-	local mh_speed, oh_speed = UnitAttackSpeed("player")
-	local mh_min, mh_max, oh_min, oh_max = UnitDamage("player")
-	if oh_speed then
-		
+--- Player swing helper
+local function PlayerSwing()
+	local now = GetTime()
+	playerMH.speed, playerOH.speed = UnitAttackSpeed("player")
+	-- playerMH.minDmg, playerMH.maxDmg, playerOH.minDmg, playerOH.maxDmg = UnitDamage("player")
+	if playerOH.speed then
+		-- Has OH
+		if GetPlayerSwungWeapon(now) then
+			-- Swung MH
+			playerMH.before = now
+			playerOH.count = 0
+			playerMH.count = playerMH.count + 1
+			StartBar(playerMH, now, playerMH.speed)
+		else
+			-- Swung OH
+			playerOH.before = now
+			playerMH.count = 0
+			playerOH.count = playerOH.count + 1
+			StartBar(playerOH, now, playerOH.speed)
+		end
+	else
+		-- Swung MH (no OH)
+		playerMH.count = 0
+		playerOH.count = 0
+		playerMH.before = now
+		StartBar(playerMH, now, playerMH.speed)
 	end
-	
-	SwingBar_PlayerMH.max = mh_speed
-	SwingBar_PlayerMH.later = GetTime() + mh_speed
-	SwingBar_PlayerMH:SetMinMaxValues(0, mh_speed)
-	SwingBar_PlayerMH.active = true
-	SwingBar_PlayerMH.spark:SetAlpha(1)
-	SwingBar_PlayerMH:Show()
 end
 
---- Spell hit handler
--- @global arg1 Combat log string for event
---		          e.g. "Your Heroic Strike hits Mottled Boar for 24"
-function Swing_SelfSpellHit()
+--- Player spell helper
+local function PlayerSpell()
+	_, _, spell = string.find(arg1, "Your (.+) hits")
+	if contains(ATTACK_SPELLS, spell) then
+		PlayerSwing()
+	end
+end
+
+--- Get the ID of the weapon that the target swung
+local function GetTargetSwungWeapon()
+end
+
+--- Target swing helper
+local function TargetSwing()
+	local now = GetTime()
+	targetMH.speed, targetOH.speed = UnitAttackSpeed("target")
+	if targetOH.speed then
+		-- Has OH
+		if GetTargetSwungWeapon() then
+			-- Swung MH
+			StartBar(targetMH, now, targetMH.speed)
+		else
+			-- Swung OH
+			StartBar(targetOH, now, targetOH.speed)
+		end
+	else
+		-- Swung MH (no OH)
+		StartBar(targetMH, now, targetMH.speed)
+	end
+end
+
+--- Target spell helper
+local function TargetSpell()
 	if string.find(arg1, "Heroic Strike") then
-		Swing_SelfHit(logString)
+		Swing_TargetSwing()
+	end
+	-- if string.find(arg1, "(.+) (crits|misses|attacks) you") then
+	-- end
+end
+
+--- Reset target timer bars
+local function ResetTarget()
+	local now = GetTime()
+	if Swing.locked then
+		targetMH:Hide()
+		targetOH:Hide()
+	else -- Demo mode
+		if UnitExists("target") then
+			local mhSpeed, ohSpeed = UnitAttackSpeed("target")
+			StartBar(targetMH, now, mhSpeed)
+			StartBar(targetOH, now, ohSpeed or mhSpeed)
+		else
+			StartBar(targetMH, now, gaymerDelta)
+			StartBar(targetMH, now, gaymerDelta)
+		end
 	end
 end
-
----	Registered event handler
-function Swing_OnEvent()
-	if event == "VARIABLES_LOADED" then
-		Swing_Init()
-  elseif event == "PLAYER_ENTER_COMBAT" then
-		Swing_ToggleLocked(true, true)
-  elseif event == "CHAT_MSG_COMBAT_SELF_HITS" or event == "CHAT_MSG_COMBAT_SELF_MISSES" then
-		Swing_SelfHit()
-	elseif event == "CHAT_MSG_SPELL_SELF_DAMAGE" then
-		Swing_SelfSpellHit()
-  end
-end
-
+	
 ---	Bar lock toggle and demo mode
-function Swing_ToggleLocked(locked, force)
+local function ToggleLocked(locked, force)
   force = force or false
   if not force and UnitAffectingCombat("player") then
     print("Unlocking disabled while in combat!")
@@ -252,12 +312,11 @@ function Swing_ToggleLocked(locked, force)
   for i, f in ipairs(bars) do
     f.max = 0
     if Swing.locked then
-      --f.nextOnUpdate = nil
-      f:SetScript("OnUpdate", SwingBar_OnUpdate)
+      f:SetScript("OnUpdate", Swing_BarOnUpdate)
       f.active = false
       f:Hide()
     else
-      f:SetScript("OnUpdate", SwingBar_DemoOnUpdate)
+      f:SetScript("OnUpdate", Swing_BarDemoOnUpdate)
 			f.later = 0
       f.spark:SetAlpha(1)
       f:Show()
@@ -265,33 +324,121 @@ function Swing_ToggleLocked(locked, force)
   end
 end
 
+--- Core and frame initialization
+local function OnVarsLoaded()
+	playerMH = Swing_PlayerMH
+	playerOH = Swing_PlayerOH
+	targetMH = Swing_TargetMH
+	targetOH = Swing_TargetOH
+	util = Swing_Util
+	
+	Swing_SwingBarInit(playerMH, Swing_BarOnUpdate, "player", MH, HSL(240, 1, 0.5))
+	Swing_SwingBarInit(playerOH, Swing_BarOnUpdate, "player", OH, HSL(220, 1, 0.5))
+	Swing_SwingBarInit(targetMH, Swing_BarOnUpdate, "target", MH, HSL(0,   1, 0.5))
+	Swing_SwingBarInit(targetOH, Swing_BarOnUpdate, "target", OH, HSL(20,  1, 0.5))
+	
+	table.insert(bars, playerMH)
+	table.insert(bars, playerOH)
+	table.insert(bars, targetMH)
+	table.insert(bars, targetOH)
+
+	_, class = UnitClass("player")
+	if class == "ROGUE" then
+		UtilToEnergy()
+	else
+		UtilToGaymer()
+	end
+end
+
+-- Global functions
+
+---	Registered event handler
+function Swing_OnEvent()
+	print(format("[%s] arg:\"%s\"", event, tostring(arg1)))
+	local now = GetTime()
+	if event == "VARIABLES_LOADED" then
+		OnVarsLoaded()
+  elseif event == "PLAYER_ENTER_COMBAT" then
+		ToggleLocked(true, true)
+		playerMH.before = now
+		playerOH.before = now
+		--targetMH.before = now
+		--targetOH.before = now
+	elseif event == "PLAYER_TARGET_CHANGED" then
+		ResetTarget()
+  elseif event == "CHAT_MSG_COMBAT_SELF_HITS" or
+	       event == "CHAT_MSG_COMBAT_SELF_MISSES" then
+		-- Player swing
+		-- arg1 e.g. "You hit Mottled Boar for 11."
+		PlayerSwing()
+	elseif event == "CHAT_MSG_SPELL_SELF_DAMAGE" then
+		PlayerSpell()
+	elseif event == "CHAT_MSG_COMBAT_CREATURE_VS_SELF_HITS" or
+	       event == "CHAT_MSG_COMBAT_CREATURE_VS_SELF_MISSES" then
+		local _, _, hitter = string.find(arg1, "(.+) hits you")
+		if not hitter then _, _, hitter = string.find(arg1, "(.+) misses you") end
+		if not hitter then _, _, hitter = string.find(arg1, "(.+) attacks. You") end  -- dodge/parry
+		if hitter == UnitName("target") then
+			TargetSwing()
+		end
+	elseif event == "CHAT_MSG_COMBAT_HOSTILEPLAYER_HITS" or
+	       event == "CHAT_MSG_COMBAT_HOSTILEPLAYER_MISSES" then
+		-- Target spell (heroic strike?)
+		-- arg1 e.g. ""
+		local _, _, hitter = string.find(arg1, "(.+) hits you")
+		if hitter == UnitName("target") then
+			TargetSpell()
+		end
+	elseif event == "UNIT_ENERGY" then
+		util:SetMinMaxValues(now, now + 2)
+  end
+end
+
+local function ResetFrame(this, relativeTo, xOff, yOff)
+	this:ClearAllPoints()
+	this:SetPoint("CENTER", relativeTo, xOff, yOff)
+end
+
 ---	Slash command function
 function Swing_SlashCommand(str)
   str = string.lower(str)
   if str == "lock" then
-    Swing_ToggleLocked()
+    ToggleLocked()
     print("[Swing] Attack bars "..(Swing.locked and "locked" or "unlocked"))
   elseif str == "reset-positions" then
-    SwingBar_PlayerMH:ClearAllPoints()
-    SwingBar_PlayerMH:SetPoint("CENTER", 0, -120)
-
-    SwingBar_PlayerOH:ClearAllPoints()
-    SwingBar_PlayerOH:SetPoint("CENTER", 0, -150)
-
-    SwingBar_EnemyMH:ClearAllPoints()
-    SwingBar_EnemyMH:SetPoint("CENTER", 0, -180)
-
-    SwingBar_EnemyOH:ClearAllPoints()
-    SwingBar_EnemyOH:SetPoint("CENTER", 0, -210)
-
-    SwingBar_GaymerPower:ClearAllPoints()
-    SwingBar_GaymerPower:SetPoint("CENTER", 0, -240)
+		ResetFrame(util, CastingBarFrame, 0, 30)
+		ResetFrame(playerMH, util, -120, 60)
+		ResetFrame(playerOH, util, -120, 30)
+		ResetFrame(targetMH, util, 120, 60)
+		ResetFrame(targetOH, util, 120, 30)
   else
     print("[Swing]")
     print("Usage: /ab <lock/reset-positions>")
   end
 end
 
---- Slash command
-SlashCmdList["SWING"] = Swing_SlashCommand
-SLASH_SWING1 = "/swing"
+function Swing_OnLoad()
+	this.locked = true
+	-- Events I know I need
+	this:RegisterEvent("UNIT_ENERGY")
+	this:RegisterEvent("VARIABLES_LOADED")
+	this:RegisterEvent("PLAYER_ENTER_COMBAT")
+	this:RegisterEvent("PLAYER_LEAVE_COMBAT")
+	this:RegisterEvent("PLAYER_TARGET_CHANGED")
+	this:RegisterEvent("CHAT_MSG_COMBAT_SELF_HITS")
+	this:RegisterEvent("CHAT_MSG_COMBAT_SELF_MISSES")
+	this:RegisterEvent("CHAT_MSG_SPELL_SELF_DAMAGE")
+	this:RegisterEvent("CHAT_MSG_COMBAT_CREATURE_VS_SELF_HITS")
+	this:RegisterEvent("CHAT_MSG_COMBAT_CREATURE_VS_SELF_MISSES")
+	this:RegisterEvent("CHAT_MSG_COMBAT_HOSTILEPLAYER_HITS")
+	this:RegisterEvent("CHAT_MSG_COMBAT_HOSTILEPLAYER_MISSES")
+	-- Events I'm not sure about
+	-- this:RegisterEvent("COMBAT_LOG_EVENT")
+	-- this:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+	-- this:RegisterEvent("UNIT_ATTACK_SPEED")
+	-- this:RegisterEvent("UNIT_SPELLCAST_SENT")
+
+	--- Slash command
+	SlashCmdList["SWING"] = Swing_SlashCommand
+	SLASH_SWING1 = "/swing"
+end

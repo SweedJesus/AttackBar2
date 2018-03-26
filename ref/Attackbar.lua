@@ -131,7 +131,7 @@ function Abar_selfhit(arg1)
         -- if the absolute value of the difference between now, the last mainhand swing time, and the mainhand speed is
         -- less-than or equal-to absolute value of now, the last offhand swing time and the offhand speed
         -- and the number of mainhand swings is not less-than or equal-to the ratio the offhand speed to the mainhand speed
-        -- or if the number of offhand swings is greater than the ration of mainhand speed to offhand speed
+        -- or if the number of offhand swings is greater than the ratio of mainhand speed to offhand speed
 				if p_oh_time == 0 then p_oh_time = now end
 				p_mh_time = now
 				p_oh_swings = 0
@@ -165,7 +165,9 @@ function Abar_reset()
 end
 
 function Abar_event(event)
-  if (event=="CHAT_MSG_COMBAT_SELF_MISSES" or event=="CHAT_MSG_COMBAT_SELF_HITS") and abar.h2h == true then Abar_selfhit(arg1) end
+  if (event=="CHAT_MSG_COMBAT_SELF_MISSES" or event=="CHAT_MSG_COMBAT_SELF_HITS") and abar.h2h == true then
+		Abar_selfhit(arg1)
+	end
   if event=="PLAYER_LEAVE_COMBAT" then Abar_reset() end
   if event == "VARIABLES_LOADED" then Abar_loaded() end
   if event == "CHAT_MSG_SPELL_SELF_DAMAGE" then Abar_spellhit(arg1) end

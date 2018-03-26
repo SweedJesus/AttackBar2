@@ -12,15 +12,18 @@
       </OnEvent>
     </Scripts>
   </Frame>
-  <!-- Attack bar template
-       -->
-  <StatusBar name="SwingBarTemplate" drawLayer="BORDER" movable="true" hidden="true" virtual="true">
+  <!-- Attack bar template -->
+  <StatusBar name="SwingTemplate" drawLayer="BORDER" movable="true" hidden="true" virtual="true">
     <Scripts>
       <OnMouseDown>
-        SwingBar_OnMouseDown()
+				if not Swing.locked and arg1 == "LeftButton" then
+					this:StartMoving()
+				end
       </OnMouseDown>
       <OnMouseUp>
-        SwingBar_OnMouseUp()
+				if arg1 == "LeftButton" then
+					this:StopMovingOrSizing()
+				end
       </OnMouseUp>
     </Scripts>
     <Size>
@@ -40,26 +43,14 @@
         </Texture>
       </Layer>
       <Layer level="ARTWORK">
-        <FontString name="$parentLText" inherits="GameFontHighlight" justifyH="LEFT">
+        <FontString name="$parentText" inherits="GameFontHighlight">
           <Size>
             <AbsDimension x="185" y="16"/>
           </Size>
           <Anchors>
-            <Anchor point="LEFT">
+            <Anchor point="CENTER">
               <Offset>
-                <AbsDimension x="4" y="2"/>
-              </Offset>
-            </Anchor>
-          </Anchors>
-        </FontString>
-        <FontString name="$parentRText" inherits="GameFontHighlight" justifyH="RIGHT">
-          <Size>
-            <AbsDimension x="185" y="16"/>
-          </Size>
-          <Anchors>
-            <Anchor point="RIGHT">
-              <Offset>
-                <AbsDimension x="-4" y="2"/>
+                <AbsDimension x="0" y="2"/>
               </Offset>
             </Anchor>
           </Anchors>
@@ -90,49 +81,48 @@
     </Layers>
     <BarTexture file="Interface\TargetingFrame\UI-StatusBar"/>
   </StatusBar>
-  <!-- Attack bars
-       -->
-  <StatusBar name="SwingBar_PlayerMH" toplevel="true" parent="UIParent" inherits="SwingBar_Template">
+  <!-- Bars -->
+  <StatusBar name="Swing_Util" toplevel="true" parent="UIParent" inherits="SwingTemplate">
     <Anchors>
-      <Anchor point="CENTER">
+      <Anchor point="CENTER" relativeTo="CastingBarFrame">
         <Offset>
-          <AbsDimension x="0" y="-120"/>
+          <AbsDimension x="0" y="30"/>
         </Offset>
       </Anchor>
     </Anchors>
   </StatusBar>
-  <StatusBar name="SwingBar_PlayerOH" toplevel="true" parent="UIParent" inherits="SwingBar_Template">
+  <StatusBar name="Swing_PlayerMH" toplevel="true" parent="UIParent" inherits="SwingTemplate">
     <Anchors>
-      <Anchor point="CENTER">
+      <Anchor point="CENTER" relativeTo="Swing_Util">
         <Offset>
-          <AbsDimension x="0" y="-150"/>
+          <AbsDimension x="-120" y="60"/>
         </Offset>
       </Anchor>
     </Anchors>
   </StatusBar>
-  <StatusBar name="SwingBar_EnemyMH" toplevel="true" parent="UIParent" inherits="SwingBar_Template">
+  <StatusBar name="Swing_PlayerOH" toplevel="true" parent="UIParent" inherits="SwingTemplate">
     <Anchors>
-      <Anchor point="CENTER">
+      <Anchor point="CENTER" relativeTo="Swing_Util">
         <Offset>
-          <AbsDimension x="0" y="-180"/>
+          <AbsDimension x="-120" y="30"/>
         </Offset>
       </Anchor>
     </Anchors>
   </StatusBar>
-  <StatusBar name="SwingBar_EnemyOH" toplevel="true" parent="UIParent" inherits="SwingBar_Template">
+  <StatusBar name="Swing_TargetMH" toplevel="true" parent="UIParent" inherits="SwingTemplate">
     <Anchors>
-      <Anchor point="CENTER">
+      <Anchor point="CENTER" relativeTo="Swing_Util">
         <Offset>
-          <AbsDimension x="0" y="-210"/>
+          <AbsDimension x="120" y="60"/>
         </Offset>
       </Anchor>
     </Anchors>
   </StatusBar>
-  <StatusBar name="SwingBar_GaymerPower" toplevel="true" parent="UIParent" inherits="SwingBar_Template">
+  <StatusBar name="Swing_TargetOH" toplevel="true" parent="UIParent" inherits="SwingTemplate">
     <Anchors>
-      <Anchor point="CENTER">
+      <Anchor point="CENTER" relativeTo="Swing_Util">
         <Offset>
-          <AbsDimension x="0" y="-240"/>
+          <AbsDimension x="120" y="30"/>
         </Offset>
       </Anchor>
     </Anchors>
