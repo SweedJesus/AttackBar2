@@ -1,7 +1,0 @@
-## Interface: 20000
-## Title: Attack bar timer
-
-## Notes: Displays a progress bar for your attack speed
-
-## SavedVariables: abar
-Attackbar.xml

@@ -29,13 +29,6 @@
     <Size>
       <AbsDimension x="195" y="13"/>
     </Size>
-		<Anchors>
-			<Anchor point="CENTER">
-				<Offset>
-					<AbsDimension x="0" y="0"/>
-				</Offset>
-			</Anchor>
-		</Anchors>
     <Layers>
       <Layer level="BACKGROUND">
         <Texture name="$parentBackground" setAllPoints="true">
@@ -82,47 +75,47 @@
     <BarTexture file="Interface\TargetingFrame\UI-StatusBar"/>
   </StatusBar>
   <!-- Bars -->
-  <StatusBar name="Swing_Util" toplevel="true" parent="UIParent" inherits="SwingTemplate">
+  <StatusBar name="Swing_Util" parent="UIParent" inherits="SwingTemplate">
     <Anchors>
-      <Anchor point="CENTER" relativeTo="CastingBarFrame">
+      <Anchor point="BOTTOM">
         <Offset>
-          <AbsDimension x="0" y="30"/>
+          <AbsDimension x="0" y="170"/>
         </Offset>
       </Anchor>
     </Anchors>
   </StatusBar>
-  <StatusBar name="Swing_PlayerMH" toplevel="true" parent="UIParent" inherits="SwingTemplate">
+  <StatusBar name="Swing_PlayerMH" parent="UIParent" inherits="SwingTemplate">
     <Anchors>
-      <Anchor point="CENTER" relativeTo="Swing_Util">
+      <Anchor point="BOTTOM">
         <Offset>
-          <AbsDimension x="-120" y="60"/>
+          <AbsDimension x="-120" y="230"/>
         </Offset>
       </Anchor>
     </Anchors>
   </StatusBar>
-  <StatusBar name="Swing_PlayerOH" toplevel="true" parent="UIParent" inherits="SwingTemplate">
+  <StatusBar name="Swing_PlayerOH" parent="UIParent" inherits="SwingTemplate">
     <Anchors>
-      <Anchor point="CENTER" relativeTo="Swing_Util">
+      <Anchor point="BOTTOM">
         <Offset>
-          <AbsDimension x="-120" y="30"/>
+          <AbsDimension x="-120" y="200"/>
         </Offset>
       </Anchor>
     </Anchors>
   </StatusBar>
-  <StatusBar name="Swing_TargetMH" toplevel="true" parent="UIParent" inherits="SwingTemplate">
+  <StatusBar name="Swing_TargetMH" parent="UIParent" inherits="SwingTemplate">
     <Anchors>
-      <Anchor point="CENTER" relativeTo="Swing_Util">
+      <Anchor point="BOTTOM">
         <Offset>
-          <AbsDimension x="120" y="60"/>
+          <AbsDimension x="120" y="230"/>
         </Offset>
       </Anchor>
     </Anchors>
   </StatusBar>
-  <StatusBar name="Swing_TargetOH" toplevel="true" parent="UIParent" inherits="SwingTemplate">
+  <StatusBar name="Swing_TargetOH" parent="UIParent" inherits="SwingTemplate">
     <Anchors>
-      <Anchor point="CENTER" relativeTo="Swing_Util">
+      <Anchor point="BOTTOM">
         <Offset>
-          <AbsDimension x="120" y="30"/>
+          <AbsDimension x="120" y="200"/>
         </Offset>
       </Anchor>
     </Anchors>
