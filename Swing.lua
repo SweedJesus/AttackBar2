@@ -5,8 +5,17 @@ local print = print or function(msg)
 	DEFAULT_CHAT_FRAME:AddMessage(msg)
 end
 
-function contains(t, v)
+local function contains(t, v)
 	return t[v] ~= nil
+end
+
+local function patternMatch(patterns, text)
+	local a, b, c, d, e, f, g, h
+	for _, p in ipairs(patterns) do
+		a, b, c, d, e, f, g, h = string.find(text, p)
+		if a then return a, b, c, d, e, f, g, h end
+	end
+	return nil
 end
 
 SlashCmdList["CLEAR"] = function()
@@ -33,7 +42,7 @@ SLASH_RL1 = "/rl"
 -- @param h Hue (0-360)
 -- @param s Saturation (0-1)
 -- @param l Lightness (0-1)
-function HSL(h, s, l)
+local function HSL(h, s, l)
 	h, s, l = mod(abs(h), 360) / 60, abs(s), abs(l)
 	if s > 1 then s = mod(s, 1) end
 	if l > 1 then l = mod(l, 1) end
@@ -83,15 +92,28 @@ local BAR_WIDTH = 195 -- see the XML template
 local MH, OH = 0, 1
 local ATTACK_SPELLS = {
 	["Heroic Strike"] = true,
-	["Raptor Strike"] = true
+	["Raptor Strike"] = true,
+	["Maul"] = true,
+	["Cleave"] = true
 }
-local CREATURE_VS_YOU_SEARCHES = {
+local PLAYER_SPELL_PATTERNS = {
+	"Your (.+) hits",
+	"Your (.+) crits",
+	"Your (.+) missed",
+	"Your (.+) was", -- dodged
+	"Your (.+) is" -- parried
+}
+local ENEMY_ATTACK_PATTERNS = {
 	"(.+) hits you",
 	"(.+) crits you",
 	"(.+) misses you",
-	"(.+) attacks. You"
+	"(.+) attacks%. You" -- dodge/parry
 }
-local PLAYER_VS_YOU_SEARCHES = {
+local ENEMY_SPELL_PATTERNS = {
+	"(.+)'s (.+) hits you",
+	"(.+)'s (.+) crits you",
+	"(.+)'s (.+) misses you",
+	"(.+)'s (.+) was" -- dodged/parried
 }
 
 -- Bar initialization helper
@@ -233,65 +255,46 @@ local function PlayerSwing()
 	local now = GetTime()
 	pMHSpeed, pOHSpeed = UnitAttackSpeed("player")
 	-- playerMH.minDmg, playerMH.maxDmg, playerOH.minDmg, playerOH.maxDmg = UnitDamage("player")
-	if pOHSpeed then
-		-- Has OH
-		if GetPlayerSwungWeapon(now) then
-			-- Swung MH
+	if pOHSpeed then  -- Has OH
+		if GetPlayerSwungWeapon(now) then  -- Swung MH
 			pOHCount = 0
 			pMHCount = pMHCount + 1
 			StartBar(playerMH, now, pMHSpeed)
-		else
-			-- Swung OH
+		else  -- Swung OH
 			pMHCount = 0
 			pOHCount = pOHCount + 1
 			StartBar(playerOH, now, pOHSpeed)
 		end
-	else
-		-- Swung MH (no OH)
+	else  -- Swung MH (no OH)
 		pMHCount = 0
 		pOHCount = 0
 		StartBar(playerMH, now, pMHSpeed)
 	end
 end
 
---- Player spell helper
-local function PlayerSpell()
-	_, _, spell = string.find(arg1, "Your (.+) hits")
-	if contains(ATTACK_SPELLS, spell) then
-		PlayerSwing()
-	end
-end
-
 --- Get the ID of the weapon that the target swung
 local function GetTargetSwungWeapon()
+	return
+		tOHSpeed ~= nil or
+		(tMHCount == 0 and tOHCount == 0) or
+		(abs(now - targetMH.before - tMHSpeed) <=
+			abs(now - targetOH.before - tOHSpeed)) or
+		(tMHCount >= tMHSpeed / tOHSpeed)
 end
 
 --- Target swing helper
 local function TargetSwing()
 	local now = GetTime()
 	tMHSpeed, tOHSpeed = UnitAttackSpeed("target")
-	if tOHSpeed then
-		-- Has OH
-		if GetTargetSwungWeapon() then
-			-- Swung MH
+	if tOHSpeed then  -- Has OH
+		if GetTargetSwungWeapon() then  -- Swung MH
 			StartBar(targetMH, now, tMHSpeed)
-		else
-			-- Swung OH
+		else  -- Swung OH
 			StartBar(targetOH, now, tOHSpeed)
 		end
-	else
-		-- Swung MH (no OH)
+	else  -- Swung MH (no OH)
 		StartBar(targetMH, now, tMHSpeed)
 	end
-end
-
---- Target spell helper
-local function TargetSpell()
-	if string.find(arg1, "Heroic Strike") then
-		TargetSwing()
-	end
-	-- if string.find(arg1, "(.+) (crits|misses|attacks) you") then
-	-- end
 end
 
 --- Reset target timer bars
@@ -370,16 +373,6 @@ local function ResetFrame(this, xOff, yOff)
 	this:SetPoint("BOTTOM", UIParent, xOff, yOff)
 end
 
-local function AttackerIsTarget(searchTable)
-	local target = UnitName("target")
-	if not target then return false end
-	for _, v in ipairs(searchTable) do
-		local _, _, hitter = string.find(arg1, v)
-		if hitter == target then return true end
-	end
-	return false
-end
-
 ---	Registered event handler
 function Swing_OnEvent()
 	local now = GetTime()
@@ -395,22 +388,38 @@ function Swing_OnEvent()
 		ResetTarget()
   elseif event == "CHAT_MSG_COMBAT_SELF_HITS" or
 	       event == "CHAT_MSG_COMBAT_SELF_MISSES" then
-		-- Player swing
-		-- arg1 e.g. "You hit Mottled Boar for 11."
 		PlayerSwing()
 	elseif event == "CHAT_MSG_SPELL_SELF_DAMAGE" then
-		PlayerSpell()
-	elseif (event == "CHAT_MSG_COMBAT_CREATURE_VS_SELF_HITS" or
-					event == "CHAT_MSG_COMBAT_CREATURE_VS_SELF_MISSES") and
-					AttackerIsTarget(CREATURE_VS_YOU_SEARCHES) then
+		local _, _, spell = patternMatch(PLAYER_SPELL_PATTERNS, arg1)
+		if contains(ATTACK_SPELLS, spell) then
+			PlayerSwing()
+		end
+	elseif event == "CHAT_MSG_COMBAT_CREATURE_VS_SELF_HITS" or
+					event == "CHAT_MSG_COMBAT_CREATURE_VS_SELF_MISSES" then
 		TargetSwing()
-	elseif (event == "CHAT_MSG_COMBAT_HOSTILEPLAYER_HITS" or
-					event == "CHAT_MSG_COMBAT_HOSTILEPLAYER_MISSES") and
-					AttackerIsTarget(PLAYER_VS_YOU_SEARCHES) then
-		TargetSpell()
+	elseif event == "CHAT_MSG_COMBAT_HOSTILEPLAYER_HITS" or
+					event == "CHAT_MSG_COMBAT_HOSTILEPLAYER_MISSES" then
+		local _, _, hitter = patternMatch(ENEMY_ATTACK_PATTERNS, arg1)
+		local target = UnitName("target")
+		if target and hitter == target then
+			TargetSwing()
+		end
+	elseif event == "CHAT_MSG_SPELL_CREATURE_VS_SELF_DAMAGE" or
+					event == "CHAT_MSG_SPELL_HOSTILEPLAYER_DAMAGE" then
+		local _, _, hitter, spell = patternMatch(ENEMY_SPELL_PATTERNS, arg1)
+		local target = UnitName("target")
+		if target and hitter == target and contains(ATTACK_SPELLS, spell) then
+			TargetSwing()
+		end
+	elseif event == "UNIT_MAXENERGY" then
+		UtilToEnergy()
+	elseif event == "UNIT_DISPLAYPOWER" then
+		if UnitPowerType("player") == 3 then
+			UtilToEnergy()
+		else
+			UtilToGaymer()
+		end
 	-- elseif event == "UNIT_ENERGY" then
-		-- StartBar(util, now, 2)
-	-- elseif event == "UNIT_MAXENERGY" then
 		-- StartBar(util, now, 2)
   end
 end
@@ -438,7 +447,8 @@ function Swing_OnLoad()
 	
 	this:RegisterEvent("VARIABLES_LOADED")
 	-- this:RegisterEvent("UNIT_ENERGY")
-	-- this:RegisterEvent("UNIT_MAXENERGY")
+	this:RegisterEvent("UNIT_MAXENERGY")
+	this:RegisterEvent("UNIT_DISPLAYPOWER")
 	this:RegisterEvent("PLAYER_ENTER_COMBAT")
 	this:RegisterEvent("PLAYER_LEAVE_COMBAT")
 	this:RegisterEvent("PLAYER_TARGET_CHANGED")
@@ -447,8 +457,10 @@ function Swing_OnLoad()
 	this:RegisterEvent("CHAT_MSG_SPELL_SELF_DAMAGE")
 	this:RegisterEvent("CHAT_MSG_COMBAT_CREATURE_VS_SELF_HITS")
 	this:RegisterEvent("CHAT_MSG_COMBAT_CREATURE_VS_SELF_MISSES")
+	this:RegisterEvent("CHAT_MSG_SPELL_CREATURE_VS_SELF_DAMAGE")
 	this:RegisterEvent("CHAT_MSG_COMBAT_HOSTILEPLAYER_HITS")
 	this:RegisterEvent("CHAT_MSG_COMBAT_HOSTILEPLAYER_MISSES")
+	this:RegisterEvent("CHAT_MSG_SPELL_HOSTILEPLAYER_DAMAGE")
 	-- this:RegisterEvent("COMBAT_LOG_EVENT")
 	-- this:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
 	-- this:RegisterEvent("UNIT_ATTACK_SPEED")
