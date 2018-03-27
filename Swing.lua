@@ -85,6 +85,14 @@ local ATTACK_SPELLS = {
 	["Heroic Strike"] = true,
 	["Raptor Strike"] = true
 }
+local CREATURE_VS_YOU_SEARCHES = {
+	"(.+) hits you",
+	"(.+) crits you",
+	"(.+) misses you",
+	"(.+) attacks. You"
+}
+local PLAYER_VS_YOU_SEARCHES = {
+}
 
 -- Bar initialization helper
 local function InitBar(this, func, r, g, b)
@@ -197,8 +205,7 @@ local function UtilToEnergy()
 	util:SetStatusBarColor(255, 255, 0)
 	util:SetScript("OnUpdate", EnergyOnUpdate)
 	util.text:SetText("")
-	util:SetMinMaxValues(0, 100)
-	StartBar(util, now, now + 2)
+	StartBar(util, now, 2)
 end
 
 local function UtilToGaymer()
@@ -209,13 +216,16 @@ local function UtilToGaymer()
 	StartBar(util, now, gaymerDelta)
 end
 
-Swing_UtilToEnergy = UtilToEnergy
-Swing_UtilToGaymer = UtilToGaymer
-
 --- Get the ID of the weapon that the player swung
+-- @return 1 (true) for MH, 0 (false) for OH
+-- TODO: Describe the model behind this (for myself, because it seems accurate
+-- but I mostly just guessed and tested until it looked so)
 local function GetPlayerSwungWeapon(now)
-	return abs(now - playerMH.before - pMHSpeed) <= abs(now - playerOH.before - pOHSpeed) or
-		pMHCount <= pOHCount
+	return
+		(pMHCount == 0 and pOHCount == 0) or
+		(abs(now - playerMH.before - pMHSpeed) <=
+			abs(now - playerOH.before - pOHSpeed)) or
+		(pMHCount >= pMHSpeed / pOHSpeed)
 end
 
 --- Player swing helper
@@ -348,14 +358,26 @@ local function OnVarsLoaded()
 	_, class = UnitClass("player")
 	if class == "ROGUE" then
 		InitBar(util, EnergyOnUpdate, 255, 255, 0)
+		UtilToEnergy()
 	else
-		InitBar(util, GaymerPowerOnUpdate, HSL(gaymerHue, 1, 0.5))
+		InitBar(util, GaymerPowerOnUpdate)
+		UtilToGaymer()
 	end
 end
 
 local function ResetFrame(this, xOff, yOff)
 	this:ClearAllPoints()
 	this:SetPoint("BOTTOM", UIParent, xOff, yOff)
+end
+
+local function AttackerIsTarget(searchTable)
+	local target = UnitName("target")
+	if not target then return false end
+	for _, v in ipairs(searchTable) do
+		local _, _, hitter = string.find(arg1, v)
+		if hitter == target then return true end
+	end
+	return false
 end
 
 ---	Registered event handler
@@ -378,25 +400,17 @@ function Swing_OnEvent()
 		PlayerSwing()
 	elseif event == "CHAT_MSG_SPELL_SELF_DAMAGE" then
 		PlayerSpell()
-	elseif event == "CHAT_MSG_COMBAT_CREATURE_VS_SELF_HITS" or
-	       event == "CHAT_MSG_COMBAT_CREATURE_VS_SELF_MISSES" then
-		local _, _, hitter = string.find(arg1, "(.+) hits you")
-		if not hitter then _, _, hitter = string.find(arg1, "(.+) misses you") end
-		if not hitter then _, _, hitter = string.find(arg1, "(.+) attacks. You") end  -- dodge/parry
-		if hitter == UnitName("target") then
-			TargetSwing()
-		end
-	elseif event == "CHAT_MSG_COMBAT_HOSTILEPLAYER_HITS" or
-	       event == "CHAT_MSG_COMBAT_HOSTILEPLAYER_MISSES" then
-		-- Target spell (heroic strike?)
-		-- arg1 e.g. ""
-		local _, _, hitter = string.find(arg1, "(.+) hits you")
-		if hitter == UnitName("target") then
-			TargetSpell()
-		end
-	elseif event == "UNIT_ENERGY" then
+	elseif (event == "CHAT_MSG_COMBAT_CREATURE_VS_SELF_HITS" or
+					event == "CHAT_MSG_COMBAT_CREATURE_VS_SELF_MISSES") and
+					AttackerIsTarget(CREATURE_VS_YOU_SEARCHES) then
+		TargetSwing()
+	elseif (event == "CHAT_MSG_COMBAT_HOSTILEPLAYER_HITS" or
+					event == "CHAT_MSG_COMBAT_HOSTILEPLAYER_MISSES") and
+					AttackerIsTarget(PLAYER_VS_YOU_SEARCHES) then
+		TargetSpell()
+	-- elseif event == "UNIT_ENERGY" then
 		-- StartBar(util, now, 2)
-	elseif event == "UNIT_MAXENERGY" then
+	-- elseif event == "UNIT_MAXENERGY" then
 		-- StartBar(util, now, 2)
   end
 end
@@ -421,10 +435,10 @@ end
 
 function Swing_OnLoad()
 	this.locked = true
-	-- Events I know I need
+	
 	this:RegisterEvent("VARIABLES_LOADED")
-	this:RegisterEvent("UNIT_ENERGY")
-	this:RegisterEvent("UNIT_MAXENERGY")
+	-- this:RegisterEvent("UNIT_ENERGY")
+	-- this:RegisterEvent("UNIT_MAXENERGY")
 	this:RegisterEvent("PLAYER_ENTER_COMBAT")
 	this:RegisterEvent("PLAYER_LEAVE_COMBAT")
 	this:RegisterEvent("PLAYER_TARGET_CHANGED")
@@ -435,13 +449,15 @@ function Swing_OnLoad()
 	this:RegisterEvent("CHAT_MSG_COMBAT_CREATURE_VS_SELF_MISSES")
 	this:RegisterEvent("CHAT_MSG_COMBAT_HOSTILEPLAYER_HITS")
 	this:RegisterEvent("CHAT_MSG_COMBAT_HOSTILEPLAYER_MISSES")
-	-- Events I'm not sure about
 	-- this:RegisterEvent("COMBAT_LOG_EVENT")
 	-- this:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
 	-- this:RegisterEvent("UNIT_ATTACK_SPEED")
 	-- this:RegisterEvent("UNIT_SPELLCAST_SENT")
-
-	--- Slash command
+	
 	SlashCmdList["SWING"] = SlashCommand
 	SLASH_SWING1 = "/swing"
 end
+
+-- TODO: Remove when done testing
+Swing_UtilToEnergy = UtilToEnergy
+Swing_UtilToGaymer = UtilToGaymer
