@@ -316,26 +316,27 @@ local function ResetTarget()
 end
 	
 ---	Bar lock toggle and demo mode
-local function ToggleLocked(locked, force)
-  force = force or false
-  if not force and UnitAffectingCombat("player") then
+local function ToggleLocked(locked)
+  if not locked and UnitAffectingCombat("player") then
     print("Unlocking disabled while in combat!")
     return
   end
   Swing.locked = locked or not Swing.locked
   for i, f in ipairs(bars) do
-    if Swing.locked then
-			if not UnitAffectingCombat("player") then
-				f:SetScript("OnUpdate", BarOnUpdate)
-				f.active = false
-				f:Hide()
+		if not f.active then
+			if Swing.locked then
+				if not UnitAffectingCombat("player") then
+					f:SetScript("OnUpdate", BarOnUpdate)
+					f.active = false
+					f:Hide()
+				end
+			else
+				f:SetScript("OnUpdate", BarDemoOnUpdate)
+				f.later = 0
+				f.spark:SetAlpha(1)
+				f:Show()
 			end
-    else
-      f:SetScript("OnUpdate", BarDemoOnUpdate)
-			f.later = 0
-      f.spark:SetAlpha(1)
-      f:Show()
-    end
+		end
   end
 end
 
@@ -379,7 +380,7 @@ function Swing_OnEvent()
 	if event == "VARIABLES_LOADED" then
 		OnVarsLoaded()
   elseif event == "PLAYER_ENTER_COMBAT" then
-		ToggleLocked(true, true)
+		ToggleLocked(true)
 		playerMH.before = now
 		playerOH.before = now
 		targetMH.before = now
